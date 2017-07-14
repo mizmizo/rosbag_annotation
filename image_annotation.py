@@ -10,12 +10,13 @@ import cv2
 import sys
 import os
 import argparse
+import random
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 image_topic_ = '/stereo/left/image_rect_color' ## topics of interest
-save_directory = '/home/mizmizo/tmp_data/conveni_data/train_data'
+save_directory = '/home/mizmizo/tmp_data/conveni_data/train_data2'
 w_counter = 0 ## Start saving label from this number
 
 ref_pt = []
@@ -24,6 +25,8 @@ selected_id = None
 run_cb = False
 id_dict = {}
 window_name = 'image_annotation'
+random.seed(5)
+color_list = []
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -71,9 +74,7 @@ def click_annotate_rect(event, x, y, flags, param):
                    (max(ref_pt[0][0], ref_pt[1][0]), max(ref_pt[0][1], ref_pt[1][1]))]
         ref_pt = swap_pt
 
-        color = [0, 0, 0]
-        color[int(selected_id) % 3] = 255
-        cv2.rectangle(image, ref_pt[0], ref_pt[1], color, 2)
+        cv2.rectangle(image, ref_pt[0], ref_pt[1], color_list[int(selected_id)], 2)
         cv2.imshow(window_name, image)
         run_cb = False
         print("OK? if ok type 'a', or 'e'")
@@ -90,6 +91,11 @@ def read_rosbag(bag_path, class_path):
         pair = line.split()
         id_dict[pair[1]] = pair[0]
     show_dict(id_dict)
+
+    ## generate color list
+    rand_list = [random.randint(0, 255) for i in xrange(len(id_dict) * 3)]
+    for i in xrange(len(id_dict)):
+        color_list.append(rand_list[i * 3:(i + 1) * 3])
 
     cv2.namedWindow(window_name)
     cv2.setMouseCallback(window_name, click_annotate_rect)
