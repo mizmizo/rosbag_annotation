@@ -14,25 +14,25 @@ import argparse
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-## topics of interest
-image_topic_ = '/stereo/left/image_rect_color'
+image_topic_ = '/stereo/left/image_rect_color' ## topics of interest
 save_directory = '/home/mizmizo/tmp_data/conveni_data/train_data'
-window_name = 'image_annotation'
-w_counter = 0
+w_counter = 0 ## Start saving label from this number
 
 ref_pt = []
 image = None
 selected_id = None
 run_cb = False
 id_dict = {}
+window_name = 'image_annotation'
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
 def usage():
     print("\n\n1. Input class ID. Type 'l' for check class list.")
     print("2. Click and drag to rectify object area.")
-    print("3. Type 'a' for adding label, or type 'e' for retry selecting area")
-    print("4. Input ID for adding next label, or type n for going to next image")
+    print("3. Type 'a' for accept label, or type 'e' for retry selecting area")
+    print("4. Type 'a' for adding a label, 'n' for going to next image, or 'q' for quiting annotation")
+    print("5. Input ID for adding next label, or type n for going to next image")
     print("\nOther commands(only enable in ID select phase):")
     print("  r: reset and erase the label file for current image")
     print("  h: show this help")
@@ -76,7 +76,7 @@ def click_annotate_rect(event, x, y, flags, param):
         cv2.rectangle(image, ref_pt[0], ref_pt[1], color, 2)
         cv2.imshow(window_name, image)
         run_cb = False
-        print("OK? a or e")
+        print("OK? if ok type 'a', or 'e'")
         sys.stdout.flush()
 
 def read_rosbag(bag_path, class_path):
@@ -185,7 +185,7 @@ def read_rosbag(bag_path, class_path):
 
 def main(argv):
     if len(argv) < 3:
-        print('provide path to rosbag')
+        print('provide path to rosbag and class list')
         return
 
     print('\033[33mchecking directory\033[0m')
