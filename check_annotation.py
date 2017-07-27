@@ -6,13 +6,10 @@ import numpy as np
 import cv2
 import sys
 import os
-import argparse
 import random
 
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-
-w_counter = 0 ## Start saving label from this number
 
 id_dict = {}
 window_name = 'annotation_check'
@@ -21,37 +18,13 @@ color_list = []
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
-def usage():
-    print("\n\n1. Input class ID. Type 'l' for check class list.")
-    print("2. Click and drag to rectify object area.")
-    print("3. Type 'a' for accept label, or type 'e' for retry selecting area")
-    print("4. Type 'a' for adding a label, 'n' for going to next image, or 'q' for quiting annotation")
-    print("5. Input ID for adding next label, or type n for going to next image")
-    print("\nOther commands(only enable in ID select phase):")
-    print("  r: reset and erase the label file for current image")
-    print("  h: show this help")
-    print("  s: skip the image\n")
-
 def show_dict(dict):
     print("Class list:")
     for x, name in sorted(dict.items()):
         print("ID:{0} Class:{1}".format(x, name))
 
-def check_input(key_val):
-    if key_val == 'l':
-        show_dict(id_dict)
-        return False
-    elif key_val == 'r':
-        # TODO remove label
-        return False
-    elif key_val == 'h':
-        usage()
-        return False
-    else:
-        return True
-
 def check_data(data_directory, class_path):
-    global id_dict, w_counter
+    global id_dict
 
     ## register class list
     for line in open(class_path, 'r'):
@@ -70,6 +43,8 @@ def check_data(data_directory, class_path):
     ## get image and label name list
     image_list = sorted(os.listdir(data_directory + "/images/"))
     label_list = sorted(os.listdir(data_directory + "/labels/"))
+
+    print("Start checking annotation, type 'q' for quiting, any other key for next image.")
 
     ## load label and visualize
     for image_name, label_name in zip(image_list, label_list):
