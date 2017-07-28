@@ -21,12 +21,19 @@ w_counter = 0 ## Start saving label from this number
 
 ref_pt = []
 image = None
+rected_image = None
+save_image = None
 selected_id = None
-run_cb = False
+state = None ## norun, addanno, modanno
 id_dict = {}
+id_reverse_dict = {}
 window_name = 'image_annotation'
-random.seed(5)
+random.seed(5) ## good seed for 8 class
 color_list = []
+operating = False
+class_vec = []
+rect_vec = []
+
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -46,39 +53,117 @@ def show_dict(dict):
     for x, name in sorted(dict.items()):
         print("ID:{0} Class:{1}".format(x, name))
 
+def show_label():
+    global image, class_vec, rect_vec
+    print("Choosed labels:")
+    for name, rect in zip(class_vec, rect_vec):
+        print("{0} x_min:{1}, y_min:{2}, x_max:{3}, y_max:{4}".format(name, rect[0], rect[0][1], rect[1][0], rect[1][1]))
+
+def draw_rect():
+    global rected_image, image
+    rected_image = image.copy()
+    for name, rect in zip(class_vec, rect_vec):
+        cv2.rectangle(rected_image, rect[0], rect[1], color_list[int(id_reverse_dict[name])], 2)
+
+# return True if state is changed
 def check_input(key_val):
+    global state
     if key_val == 'l':
         show_dict(id_dict)
-        return False
-    elif key_val == 'r':
-        # TODO remove label
         return False
     elif key_val == 'h':
         usage()
         return False
-    else:
+    elif key_val == 'c':
+        show_label()
+        return False
+    elif key_val == 'q':
+        state = "exit"
         return True
+    elif key_val == 'a':
+        state = "waitaddanno"
+        return True
+    elif key_val == 's':
+        state = "norun"
+        return True
+    elif key_val == 'm':
+        state = "waitmodanno"
+        return True
+    else:
+        return False
+
+def finish_imageproc():
+    global class_vec, rect_vec, w_counter
+    if not len(class_vec) == 0:
+        ## write to file
+        suffix_name = str(w_counter).zfill(6)
+        text_file = open(save_directory + '/labels/' + suffix_name + '.txt', 'w')
+        for name, rect in zip(class_vec, rect_vec):
+            text_file.write('%s 0.0 0.0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
+                            (name, float(rect[0][0]), float(rect[0][1]),
+                             float(rect[1][0]), float(rect[1][1])))
+        text_file.close()
+        cv2.imwrite(save_directory + '/images/' + suffix_name + '.jpg', save_image)
+        class_vec = []
+        rect_vec = []
+        w_counter += 1
+
 
 def click_annotate_rect(event, x, y, flags, param):
-    global run_cb, ref_pt
+    global state, ref_pt, operating, rected_image
 
-    if not run_cb:
-        return
+    ## Add annotation
+    if state == "addanno":
+        if event == cv2.EVENT_LBUTTONDOWN:
+            ref_pt = [(x, y)]
+            operating = True
+            return
+        elif event == cv2.EVENT_LBUTTONUP:
+            ref_pt.append((x, y))
+            swap_pt = [(min(ref_pt[0][0], ref_pt[1][0]), min(ref_pt[0][1], ref_pt[1][1])),
+                       (max(ref_pt[0][0], ref_pt[1][0]), max(ref_pt[0][1], ref_pt[1][1]))]
+            ref_pt = swap_pt
+            state = "waitaddanno"
+            print("OK? if ok type 'o' or 'r'")
+            sys.stdout.flush()
+            operating = False
+            return
+        elif operating:
+            tmp_pt = (x,y)
+            swap_pt = [(min(ref_pt[0][0], tmp_pt[0]), min(ref_pt[0][1], tmp_pt[1])),
+                       (max(ref_pt[0][0], tmp_pt[0]), max(ref_pt[0][1], tmp_pt[1]))]
+            tmp_image = rected_image.copy()
+            cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], color_list[int(selected_id)], 2)
+            cv2.imshow(window_name, tmp_image)
+            cv2.waitKey(1)
+    ## Modify annotation
+    elif state == "modanno":
+        if event == cv2.EVENT_LBUTTONDOWN:
+            ref_pt = [(x, y)]
+            operating = True
+            return
+        elif event == cv2.EVENT_LBUTTONUP:
+            ref_pt.append((x, y))
+            swap_pt = [(min(ref_pt[0][0], ref_pt[1][0]), min(ref_pt[0][1], ref_pt[1][1])),
+                       (max(ref_pt[0][0], ref_pt[1][0]), max(ref_pt[0][1], ref_pt[1][1]))]
+            ref_pt = swap_pt
 
-    if event == cv2.EVENT_LBUTTONDOWN:
-        ref_pt = [(x, y)]
-    elif event == cv2.EVENT_LBUTTONUP:
-        ref_pt.append((x, y))
+            cv2.rectangle(image, ref_pt[0], ref_pt[1], color_list[int(selected_id)], 2)
+            cv2.imshow(window_name, image)
+            state = "waitmodanno"
+            print("OK? if ok type 'a', 'm', or 'e'")
+            sys.stdout.flush()
+            operating = False
+            return
+        elif operating:
+            tmp_pt = (x,y)
+            swap_pt = [(min(ref_pt[0][0], tmp_pt[0]), min(ref_pt[0][1], tmp_pt[1])),
+                       (max(ref_pt[0][0], tmp_pt[0]), max(ref_pt[0][1], tmp_pt[1]))]
+            tmp_image = image.copy()
+            cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], color_list[int(selected_id)], 2)
+            cv2.imshow(window_name, tmp_image)
+            cv2.waitKey(1)
 
-        swap_pt = [(min(ref_pt[0][0], ref_pt[1][0]), min(ref_pt[0][1], ref_pt[1][1])),
-                   (max(ref_pt[0][0], ref_pt[1][0]), max(ref_pt[0][1], ref_pt[1][1]))]
-        ref_pt = swap_pt
-
-        cv2.rectangle(image, ref_pt[0], ref_pt[1], color_list[int(selected_id)], 2)
-        cv2.imshow(window_name, image)
-        run_cb = False
-        print("OK? if ok type 'a', or 'e'")
-        sys.stdout.flush()
 
 def read_rosbag(bag_path, class_path):
     global id_dict, w_counter
@@ -89,7 +174,8 @@ def read_rosbag(bag_path, class_path):
     for line in open(class_path, 'r'):
         line = line.rstrip("\n")
         pair = line.split()
-        id_dict[pair[1]] = pair[0]
+        id_dict[pair[1]] = pair[0] ## key: id value: name
+        id_reverse_dict[pair[0]] = pair[1] ## key: name value: id
     show_dict(id_dict)
 
     ## generate color list
@@ -102,89 +188,103 @@ def read_rosbag(bag_path, class_path):
 
     r_counter = 0
 
+    ## read each image in rosbag
     for topic, msg, t in bag.read_messages(topics=[image_topic_]):
-        global image, save_image
+        global image, state, class_vec, rect_vec, rected_image, save_image
+
+        if state == "exit":
+            bag.close()
+            return
+
+        ### preparation
         try:
             image = bridge.imgmsg_to_cv2(msg, "bgr8")
         except Exception as e:
             print (e)
 
-        print("read  iteration: {0}".format(r_counter))
+        print("\nread  iteration: {0}".format(r_counter))
         print("write iteration: {0}".format(w_counter))
+        r_counter += 1
         save_image = image.copy()
-        suffix_name = str(w_counter).zfill(6)
-
         stride = 16
         for j in xrange(0, image.shape[0], stride):
             for i in xrange(0, image.shape[1], stride):
                 cv2.circle(image, (i, j), 2, (0, 255, 0), -1)
-        prev_image = image.copy()
+        rected_image = image.copy()
         cv2.imshow(window_name, image)
-
-        ## labelling
-
         saved = False
-        while True:
-            global selected_id, run_cb
 
-            print("Enter id num : ", end="")
-            sys.stdout.flush()
+        ### choose operation
+        print("Choose operation for this image : ", end="")
+        sys.stdout.flush()
+        val = ''
+        while True:
             key = cv2.waitKey(0) & 0xFF
             val = chr(key)
-            flag = check_input(val)
-            if flag:
-                if val in id_dict.keys():
-                    print(id_dict[val])
-                    selected_id = val
-                elif val == 's':
-                    break
-                else:
-                    flag = False
+            if check_input(val):
+                print(state)
+                break
 
-            if flag:
-                print("draw rect")
+        if state == "norun":
+            finish_imageproc()
+            continue
+        elif state == "exit":
+            continue
+
+        ### operate on image
+        while True:
+            global selected_id
+
+            if state == "waitaddanno":
+                print("Enter id num : ", end="")
                 sys.stdout.flush()
-                run_cb = True
                 val = ''
-                while val != 'a' and val != 'e':
+                # get label id
+                while True:
                     key = cv2.waitKey(0) & 0xFF
                     val = chr(key)
-                    if val == 'a':
-                        print("Write to file")
-                        sys.stdout.flush()
+                    if check_input(val):
+                        break
+                    elif val in id_dict.keys():
+                        print(id_dict[val])
+                        selected_id = val
+                        break
 
-                        ## write to file
-                        text_file = open(save_directory + '/labels/' + suffix_name + '.txt', 'a')
-                        text_file.write('%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n' %
-                                        (id_dict[selected_id], 0.0, 0, 0.0, float(ref_pt[0][0]), float(ref_pt[0][1]),
-                                         float(ref_pt[1][0]), float(ref_pt[1][1]), 0.0, 0.0, \
-                                         0.0, 0.0, 0.0, 0.0, 0.0))
-                        text_file.close()
-                        cv2.imwrite(save_directory + '/images/' + suffix_name + '.jpg', save_image)
-                        saved = True
-                        prev_image = image.copy()
-                        cv2.imshow(window_name, image)
-                    elif val == 'e':
-                        print("Retry")
-                        sys.stdout.flush()
-                        image = prev_image.copy()
-                        cv2.imshow(window_name, image)
-                    else:
-                        print("answer in 'a' or 'e'")
-            print("'n': next image\n'a': next object in same image\n'q': finish annotation")
-            sys.stdout.flush()
-            val = ''
-            while val != 'n' and val != 'a' and val !='q':
-                key = cv2.waitKey(0) & 0xFF
-                val = chr(key)
-            if val == 'n':
-                break
-            elif val == 'q':
-                bag.close()
-                return
-        if saved:
-            w_counter += 1
-        r_counter += 1
+                if state == "waitaddanno":
+                    print("draw rect")
+                    sys.stdout.flush()
+                    state = "addanno"
+                    val = ''
+                    while True:
+                        key = cv2.waitKey(0) & 0xFF
+                        val = chr(key)
+                        if check_input(val) and state != "waitaddanno":
+                            break
+                        if val == 'o':
+                            print("add label")
+                            sys.stdout.flush()
+                            class_vec.append(id_dict[selected_id])
+                            rect_vec.append(ref_pt)
+                            draw_rect()
+                            cv2.imshow(window_name, rected_image)
+                            break
+                        elif val == 'r':
+                            print("Retry")
+                            sys.stdout.flush()
+                            cv2.imshow(window_name, rected_image)
+                            state = "waitaddanno"
+                            break
+                        else:
+                            print("answer in 'o' or 'r'")
+
+                if state != "waitaddanno":
+                    break
+
+        if state == "norun":
+            finish_imageproc()
+            continue
+        elif state == "exit":
+            continue
 
     bag.close()
 
