@@ -29,21 +29,21 @@ random.seed(5) ## good seed for 8 class
 
 class AnnotationContainer:
     def __init__(self, save_directory, init_counter, keep_label = True):
-        self.save_directory = '/home/hiroto/data/conveni/train_data'
+        self.__save_directory = '/home/hiroto/data/conveni/train_data'
         self.image = None ## image with dots
         self.rected_image = None ## image with dots and rects
-        self.save_image = None ## original image
+        self.__save_image = None ## original image
         self.id_dict = {}
         self.id_reverse_dict = {}
         self.class_vec = []
         self.rect_vec = []
-        self.bridge = CvBridge()
-        self.r_counter = 0
-        self.w_counter = init_counter
-        self.keep_label = keep_label
+        self.__bridge = CvBridge()
+        self.__r_counter = 0
+        self.__w_counter = init_counter
+        self.__keep_label = keep_label
 
     def register_dict(self, class_path):
-        if len(self.id_dict) != 0:
+        if len(self.id_dict) != 0 or len(self.id_reverse_dict) != 0:
             printf("ID dictionary is not empty!")
             return
         for line in open(class_path, 'r'):
@@ -64,18 +64,18 @@ class AnnotationContainer:
     def show_label(self):
         print("Choosed labels:")
         for name, rect in zip(self.class_vec, self.rect_vec):
-            print("{0} x_min:{1}, y_min:{2}, x_max:{3}, y_max:{4}".format(name, rect[0], rect[0][1], rect[1][0], rect[1][1]))
+            print("{0} x_min:{1}, y_min:{2}, x_max:{3}, y_max:{4}".format(name, rect[0][0], rect[0][1], rect[1][0], rect[1][1]))
 
     def load_image_from_msg(self, msg, enc = "bgr8"):
         try:
-            self.image = self.bridge.imgmsg_to_cv2(msg, enc)
+            self.image = self.__bridge.imgmsg_to_cv2(msg, enc)
         except Exception as e:
             print (e)
 
-        print("\nread  iteration: {0}".format(self.r_counter))
-        print("write iteration: {0}".format(self.w_counter))
-        self.r_counter += 1
-        self.save_image = self.image.copy()
+        print("\nread  iteration: {0}".format(self.__r_counter))
+        print("write iteration: {0}".format(self.__w_counter))
+        self.__r_counter += 1
+        self.__save_image = self.image.copy()
         stride = 16
         for j in xrange(0, self.image.shape[0], stride):
             for i in xrange(0, self.image.shape[1], stride):
@@ -85,29 +85,31 @@ class AnnotationContainer:
     def finish_imageproc(self):
         if not len(self.class_vec) == 0:
             ## write to file
-            suffix_name = str(self.w_counter).zfill(6)
-            text_file = open(self.save_directory + '/labels/' + suffix_name + '.txt', 'w')
+            suffix_name = str(self.__w_counter).zfill(6)
+            text_file = open(self.__save_directory + '/labels/' + suffix_name + '.txt', 'w')
             for name, rect in zip(self.class_vec, self.rect_vec):
                 text_file.write('%s 0.0 0.0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
                                 (name, float(rect[0][0]), float(rect[0][1]),
                                  float(rect[1][0]), float(rect[1][1])))
             text_file.close()
-            cv2.imwrite(self.save_directory + '/images/' + suffix_name + '.jpg', self.save_image)
-            self.w_counter += 1
-            if not self.keep_label:
+            cv2.imwrite(self.__save_directory + '/images/' + suffix_name + '.jpg', self.__save_image)
+            self.__w_counter += 1
+            if not self.__keep_label:
                 self.class_vec = []
                 self.rect_vec = []
 
 class AnnotationOperator:
     def __init__(self):
-        self.click_id = None
-        self.click_state = None
-        self.stable_pt = None
-        self.operating = False
         self.ref_pt = []
         self.state = None
-        self.color_list = []
         self.selected_id = None
+        self.__click_id = None
+        self.__click_state = None
+        self.__operating = False
+        self.__mod_pt = [] # [stable, moving]
+        self.__color_list = []
+        self.__interrupt_com_list = ['l', 'h', 'c']
+        self.__state_com_list = {'q':"exit", 'a':"waitaddanno", 'e':"eraseanno", 'm':"modanno", 's':"norun"}
 
     def usage(self):
         print("\nUsage:")
@@ -128,12 +130,12 @@ class AnnotationOperator:
     def generate_colorlist(self, length):
         rand_list = [random.randint(0, 255) for i in xrange(length * 3)]
         for i in xrange(length):
-            self.color_list.append(rand_list[i * 3:(i + 1) * 3])
+            self.__color_list.append(rand_list[i * 3:(i + 1) * 3])
 
     def draw_rect(self, data):
         data.rected_image = data.image.copy()
         for name, rect in zip(data.class_vec, data.rect_vec):
-            cv2.rectangle(data.rected_image, rect[0], rect[1], self.color_list[int(data.id_reverse_dict[name])], 2)
+            cv2.rectangle(data.rected_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
 
     def wait_command(self, container, preset_com = [""], ignore_state = "" , msg = ""):
         if msg != "":
@@ -143,16 +145,17 @@ class AnnotationOperator:
         while True:
             key = cv2.waitKey(0) & 0xFF
             val = chr(key)
-            if self.check_input(val, container) and self.state != ignore_state:
-                return None
+            if self.check_input(val, container):
+                if self.state != ignore_state:
+                    return None
             elif val in preset_com:
                 return val
-            else:
+            elif not val in self.__interrupt_com_list:
                 print("usable command is {0}".format(sorted(preset_com)))
 
-    ## return  clicked rect_id and (0: center | 1:left-top | 2:left-bottom | 3:right-bottom | 4:right-top | 5:none)
+    ## return  clicked rect_id and (0:left-top | 1:left-bottom | 2:right-bottom | 3:right-top | 4: center |  5:none)
     def click_rect_check(self, pt, rects):
-        vertex_thre = 5 # threthold for detecting vertex click in px
+        vertex_thre = 8 # threthold for detecting vertex click in px
         found_center_click = []
         found_vertex_click = []
         for i, rect in enumerate(rects):
@@ -160,25 +163,25 @@ class AnnotationOperator:
                 found_center_click.append(i)
             if abs(rect[0][0] - pt[0]) < vertex_thre:
                 if abs(rect[0][1] - pt[1]) < vertex_thre:
-                    found_vertex_click.append((i, 1, np.sqrt(np.square((rect[0][0] - pt[0])) + np.square((rect[0][1] - pt[1]))))) # (id, vertex, dist)
+                    found_vertex_click.append((i, 0, np.sqrt(np.square((rect[0][0] - pt[0])) + np.square((rect[0][1] - pt[1]))))) # (id, vertex, dist)
                 elif abs(rect[1][1] - pt[1]) < vertex_thre:
-                    found_vertex_click.append((i, 2, np.sqrt(np.square((rect[0][0] - pt[0])) + np.square((rect[1][1] - pt[1]))))) # (id, vertex, dist)
+                    found_vertex_click.append((i, 1, np.sqrt(np.square((rect[0][0] - pt[0])) + np.square((rect[1][1] - pt[1]))))) # (id, vertex, dist)
             elif abs(rect[1][0] - pt[0]) < vertex_thre:
                 if abs(rect[1][1] - pt[1]) < vertex_thre:
-                    found_vertex_click.append((i, 3, np.sqrt(np.square((rect[1][0] - pt[0])) + np.square((rect[1][1] - pt[1]))))) # (id, vertex, dist)
+                    found_vertex_click.append((i, 2, np.sqrt(np.square((rect[1][0] - pt[0])) + np.square((rect[1][1] - pt[1]))))) # (id, vertex, dist)
                 elif abs(rect[0][1] - pt[1]) < vertex_thre:
-                    found_vertex_click.append((i, 4, np.sqrt(np.square((rect[1][0] - pt[0])) + np.square((rect[0][1] - pt[1]))))) # (id, vertex, dist)
+                    found_vertex_click.append((i, 3, np.sqrt(np.square((rect[1][0] - pt[0])) + np.square((rect[0][1] - pt[1]))))) # (id, vertex, dist)
 
         if len(found_vertex_click) != 0:
             found_vertex_click.sort(key = lambda x:x[2])
-            self.click_id = found_vertex_click[0][0]
-            self.click_state = found_vertex_click[0][1]
+            self.__click_id = found_vertex_click[0][0]
+            self.__click_state = found_vertex_click[0][1]
         elif len(found_center_click) != 0:
-            self.click_id = found_center_click[0]
-            self.click_state = 0
+            self.__click_id = found_center_click[0]
+            self.__click_state = 4
         else:
-            self.click_id = 0
-            self.click_state = 5
+            self.__click_id = 0
+            self.__click_state = 5
 
     # return True if state is changed
     def check_input(self, key_val, data):
@@ -191,20 +194,8 @@ class AnnotationOperator:
         elif key_val == 'c':
             data.show_label()
             return False
-        elif key_val == 'q':
-            operator.state = "exit"
-            return True
-        elif key_val == 'a':
-            operator.state = "waitaddanno"
-            return True
-        elif key_val == 'e':
-            operator.state = "eraseanno"
-            return True
-        elif key_val == 'm':
-            operator.state = "modanno"
-            return True
-        elif key_val == 's':
-            operator.state = "norun"
+        elif key_val in self.__state_com_list.keys():
+            operator.state = self.__state_com_list[key_val]
             return True
         else:
             return False
@@ -216,7 +207,7 @@ class AnnotationOperator:
         if self.state == "addanno":
             if event == cv2.EVENT_LBUTTONDOWN:
                 self.ref_pt = [(x, y)]
-                self.operating = True
+                self.__operating = True
                 return
             elif event == cv2.EVENT_LBUTTONUP:
                 self.ref_pt.append((x, y))
@@ -226,25 +217,24 @@ class AnnotationOperator:
                 self.state = "waitaddanno"
                 print("OK? if ok type 'o' for ok,  or 'r' for reject")
                 sys.stdout.flush()
-                self.operating = False
+                self.__operating = False
                 return
-            elif self.operating:
+            elif self.__operating:
                 tmp_pt = (x,y)
                 swap_pt = [(min(self.ref_pt[0][0], tmp_pt[0]), min(self.ref_pt[0][1], tmp_pt[1])),
                            (max(self.ref_pt[0][0], tmp_pt[0]), max(self.ref_pt[0][1], tmp_pt[1]))]
                 tmp_image = data.rected_image.copy()
-                cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], self.color_list[int(self.selected_id)], 2)
+                cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], self.__color_list[int(self.selected_id)], 2)
                 cv2.imshow(window, tmp_image)
                 cv2.waitKey(1)
 
         ## Erase annotation
         elif self.state == "eraseanno":
             if event == cv2.EVENT_LBUTTONDOWN and len(data.class_vec) != 0:
-                erase_pt = (x, y)
-                self.click_rect_check(erase_pt, data.rect_vec)
-                if self.click_state != 5: #  selected
-                    del data.class_vec[self.click_id]
-                    del data.rect_vec[self.click_id]
+                self.click_rect_check((x, y), data.rect_vec)
+                if self.__click_state != 5: #  selected
+                    del data.class_vec[self.__click_id]
+                    del data.rect_vec[self.__click_id]
                     self.draw_rect(data)
                     cv2.imshow(window, data.rected_image)
                     return
@@ -252,29 +242,59 @@ class AnnotationOperator:
         ## Modify annotation
         elif self.state == "modanno":
             if event == cv2.EVENT_LBUTTONDOWN:
-                mod_pt = [(x, y)]
-                self.click_rect_check(mod_pt)
-                #todo
-                if self.click_state != 5: # selected
-                    self.operating = True
+                self.click_rect_check((x, y), data.rect_vec)
+                if self.__click_state == 4: # selected center
+                    self.__mod_pt = [(x, y)]
+                    self.__operating = True
+                    return
+                elif self.__click_state != 5: # selected vertex
+                    stable_id = (self.__click_state + 2) % 4
+                    stable_pt = []
+                    if stable_id  in (0, 1): # left
+                        stable_pt.append(data.rect_vec[self.__click_id][0][0])
+                    else: # right
+                        stable_pt.append(data.rect_vec[self.__click_id][1][0])
+                    if stable_id  in (0, 3) : # top
+                        stable_pt.append(data.rect_vec[self.__click_id][0][1])
+                    else: # bottom
+                        stable_pt.append(data.rect_vec[self.__click_id][1][1])
+                    self.__mod_pt = [stable_pt, (0, 0)] # second is dammy
+                    self.__operating = True
                     return
             elif event == cv2.EVENT_LBUTTONUP:
-                self.ref_pt.append((x, y))
-                swap_pt = [(min(ref_pt[0][0], ref_pt[1][0]), min(ref_pt[0][1], ref_pt[1][1])),
-                           (max(ref_pt[0][0], ref_pt[1][0]), max(ref_pt[0][1], ref_pt[1][1]))]
-                ref_pt = swap_pt
+                new_rect = []
+                if len(self.__mod_pt) == 1: # center
+                    move_pt = (x - self.__mod_pt[0][0], y - self.__mod_pt[0][1])
+                    new_rect = [(data.rect_vec[self.__click_id][0][0] + move_pt[0], data.rect_vec[self.__click_id][0][1] + move_pt[1]),
+                                (data.rect_vec[self.__click_id][1][0] + move_pt[0], data.rect_vec[self.__click_id][1][1] + move_pt[1])]
+                else: # vertex
+                    self.__mod_pt.pop()
+                    self.__mod_pt.append((x, y))
+                    new_rect = [(min(self.__mod_pt[0][0], self.__mod_pt[1][0]), min(self.__mod_pt[0][1], self.__mod_pt[1][1])),
+                                (max(self.__mod_pt[0][0], self.__mod_pt[1][0]), max(self.__mod_pt[0][1], self.__mod_pt[1][1]))]
 
-                cv2.rectangle(image, ref_pt[0], ref_pt[1], self.color_list[int(self.selected_id)], 2)
-                cv2.imshow(window_name, image)
-                self.state = "modanno"
-                print("OK? if ok type 'a', 'm', or 'e'")
-                sys.stdout.flush()
-                self.operating = False
+                data.rect_vec[self.__click_id] = new_rect
+                self.draw_rect(data)
+                cv2.imshow(window, data.rected_image)
+                self.__operating = False
                 return
-            elif self.operating:
-                tmp_rect = rect_vec[self.click_id]
-                tmp_image = image.copy()
-                cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], self.color_list[int(self.selected_id)], 2)
+            elif self.__operating:
+                tmp_rect = []
+                if len(self.__mod_pt) == 1: # center
+                    move_pt = (x - self.__mod_pt[0][0], y - self.__mod_pt[0][1])
+                    tmp_rect = [(data.rect_vec[self.__click_id][0][0] + move_pt[0], data.rect_vec[self.__click_id][0][1] + move_pt[1]),
+                                (data.rect_vec[self.__click_id][1][0] + move_pt[0], data.rect_vec[self.__click_id][1][1] + move_pt[1])]
+                else: # vertex
+                    self.__mod_pt.pop()
+                    self.__mod_pt.append((x, y))
+                    tmp_rect = [(min(self.__mod_pt[0][0], self.__mod_pt[1][0]), min(self.__mod_pt[0][1], self.__mod_pt[1][1])),
+                                (max(self.__mod_pt[0][0], self.__mod_pt[1][0]), max(self.__mod_pt[0][1], self.__mod_pt[1][1]))]
+
+                tmp_rects = data.rect_vec[:]
+                tmp_rects[self.__click_id] = tmp_rect
+                tmp_image = data.image.copy()
+                for name, rect in zip(data.class_vec, tmp_rects):
+                    cv2.rectangle(tmp_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
                 cv2.imshow(window_name, tmp_image)
                 cv2.waitKey(1)
 
@@ -286,11 +306,10 @@ def read_rosbag(bag_path, class_path):
     operator = AnnotationOperator()
     bag = rosbag.Bag(bag_path, 'r')
 
-    ## setup container
+    ## setup
     container.register_dict(class_path)
     container.show_dict()
     operator.generate_colorlist(len(container.id_dict))
-
     cv2.namedWindow(window_name)
     cv2.setMouseCallback(window_name, operator.click_annotate_rect, [container, window_name])
 
@@ -301,12 +320,10 @@ def read_rosbag(bag_path, class_path):
         if operator.state == "exit":
             bag.close()
             return
-
         ### preparation
         container.load_image_from_msg(msg)
         operator.draw_rect(container)
         cv2.imshow(window_name, container.rected_image)
-
         ### choose operation
         operator.wait_command(container, msg = "Choose operation for this image : ")
         print(operator.state)
@@ -318,7 +335,7 @@ def read_rosbag(bag_path, class_path):
         elif operator.state == "exit":
             continue
 
-        ### operate on image
+        ### operate on each image
         while not operator.state in ("norun", "exit"):
             ### Add annotation
             if operator.state == "waitaddanno":
@@ -331,8 +348,8 @@ def read_rosbag(bag_path, class_path):
                     operator.selected_id = com
                     print("draw rect")
                     sys.stdout.flush()
+                    operator.state = "addanno"
                     while True:
-                        operator.state = "addanno"
                         com = operator.wait_command(container,
                                                     preset_com = ["o", "r"])
                         if not com:
@@ -340,7 +357,7 @@ def read_rosbag(bag_path, class_path):
                             operator.state = "waitaddanno"
                             continue
                         elif com == 'o' and operator.state == "waitaddanno":
-                            print("add label")
+                            print("add rect : {0}".format(operator.ref_pt))
                             sys.stdout.flush()
                             container.class_vec.append(container.id_dict[operator.selected_id])
                             container.rect_vec.append(operator.ref_pt)
