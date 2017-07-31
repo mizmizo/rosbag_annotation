@@ -82,8 +82,8 @@ class AnnotationContainer:
                 cv2.circle(self.image, (i, j), 2, (0, 255, 0), -1)
         self.rected_image = self.image.copy()
 
-    def finish_imageproc(self):
-        if not len(self.class_vec) == 0:
+    def finish_imageproc(self, save = True):
+        if not len(self.class_vec) == 0 and save:
             ## write to file
             suffix_name = str(self.__w_counter).zfill(6)
             text_file = open(self.__save_directory + '/labels/' + suffix_name + '.txt', 'w')
@@ -94,9 +94,9 @@ class AnnotationContainer:
             text_file.close()
             cv2.imwrite(self.__save_directory + '/images/' + suffix_name + '.jpg', self.__save_image)
             self.__w_counter += 1
-            if not self.__keep_label:
-                self.class_vec = []
-                self.rect_vec = []
+        if not self.__keep_label:
+            self.class_vec = []
+            self.rect_vec = []
 
 class AnnotationOperator:
     def __init__(self):
@@ -109,7 +109,7 @@ class AnnotationOperator:
         self.__mod_pt = [] # [stable, moving]
         self.__color_list = []
         self.__interrupt_com_list = ['l', 'h', 'c']
-        self.__state_com_list = {'q':"exit", 'a':"waitaddanno", 'e':"eraseanno", 'm':"modanno", 's':"norun"}
+        self.__state_com_list = {'q':"exit", 'a':"waitaddanno", 'e':"eraseanno", 'm':"modanno", 's':"norun", 'n':"skip"}
 
     def usage(self):
         print("\nUsage:")
@@ -125,7 +125,8 @@ class AnnotationOperator:
         print("  a: enter add annotation mode")
         print("  e: enter erase annotation mode")
         print("  m: enter modify annotation mode")
-        print("  s: go to next image")
+        print("  s: go to next image with saving label")
+        print("  n: go to next image WITHOUT saving label")
 
     def generate_colorlist(self, length):
         rand_list = [random.randint(0, 255) for i in xrange(length * 3)]
@@ -332,11 +333,11 @@ def read_rosbag(bag_path, class_path):
         if operator.state == "norun":
             container.finish_imageproc()
             continue
-        elif operator.state == "exit":
+        elif operator.state in ("exit", "skip"):
             continue
 
         ### operate on each image
-        while not operator.state in ("norun", "exit"):
+        while not operator.state in ("norun", "skip", "exit"):
             ### Add annotation
             if operator.state == "waitaddanno":
                 com = operator.wait_command(container,
@@ -378,9 +379,11 @@ def read_rosbag(bag_path, class_path):
                                       ignore_state = operator.state,
                                       msg = "Click rectangle.\n")
 
-            ## go-to-next image
+            ## save image and label
             if operator.state == "norun":
                 container.finish_imageproc()
+            elif operator.state == "skip":
+                container.finish_imageproc(save = False)
 
     bag.close()
 

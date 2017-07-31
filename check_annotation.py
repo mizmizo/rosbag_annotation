@@ -15,6 +15,7 @@ id_dict = {}
 window_name = 'annotation_check'
 random.seed(5)
 color_list = []
+show_time = 100 # show each image and label for show_time ms
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -59,7 +60,7 @@ def check_data(data_directory, class_path):
             cv2.putText(image, label, roi[2], cv2.FONT_HERSHEY_TRIPLEX, 1.0, color_list[int(id_dict[label])])
 
         cv2.imshow(window_name, image)
-        key = cv2.waitKey() & 0xFF
+        key = cv2.waitKey(show_time) & 0xFF
         if chr(key) == 'q':
             return
 
