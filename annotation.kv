@@ -1,0 +1,266 @@
+
+AnnotationWidget:
+
+<StateButton@ToggleButton>
+    font_size: 20
+    background_color: 0.4, 0.4, 0.8, 1
+
+<CommandButton@Button>
+    font_size: 20
+    background_color: 0.8, 0.8, 0.8, 1
+
+<StrLabel@Label>
+    font_size: 20
+
+<AnnotationWidget>:
+    ScreenManager:
+        id: sm
+
+## ==== Setting ==== ##
+
+        Screen:
+            name: 'Settings'
+            canvas.before:
+                Color:
+                    rgb: 1, 1, 1
+                Rectangle:
+                    source: 'data/images/background.jpg'
+                    pos: root.pos
+                    size: root.size
+
+            BoxLayout:
+                orientation: 'vertical'
+                padding: 30, 30, 30, 30
+
+                BoxLayout:
+                    size_hint_y: 0.1
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Rosbag File'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: bagfile_path
+                        multiline: False
+                        text: "/home/hiroto/data/conveni/datas/01.bag"
+
+                BoxLayout:
+                    size_hint_y: 0.1
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Topic of Interest'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: topic_name
+                        multiline: False
+                        text: "/stereo/left/image_rect_color"
+
+                BoxLayout:
+                    size_hint_y: 0.1
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Class List'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: class_list
+                        multiline: False
+                        text: "class_list.txt"
+
+                BoxLayout:
+                    size_hint_y: 0.1
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Save Directory'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: save_path
+                        multiline: False
+                        text: "/home/hiroto/data/conveni/train_data"
+
+                BoxLayout:
+                    size_hint_y: 0.1
+
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Start counter'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: start_counter
+                        multiline: False
+                        text: "0"
+
+                BoxLayout:
+                    size_hint_y: 0.4
+                    StrLabel:
+                        id: error_window
+                        text: root.guide_msg
+                        color: [1, 0, 0, 1]
+
+                BoxLayout:
+                    size_hint_y: 0.2
+                    Label:
+                        size_hint_x: 0.70
+                    Button:
+                        size_hint_x: 0.30
+                        size_hint: None, None
+                        size: '150dp', '48dp'
+                        text: "Start"
+                        on_release: root.startAnnotation(sm, bagfile_path, topic_name, class_list, save_path, start_counter)
+
+## ==== Annotation ==== ##
+
+        Screen:
+            name: 'Annotation'
+            BoxLayout:
+                orientation: 'horizontal'
+                size: root.size
+
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x: 0.85
+
+                    # Image
+                    image_view: image_view.__self__
+                    TouchTracer:
+                        size_hint_y: None
+                        size_hint_x: None
+                        id: image_view
+                        texture: self.texture
+                        allow_stretch: True
+                        kepp_ratio: True
+                        width: self.parent.width
+                        height: self.parent.width/self.image_ratio
+
+                    # Status bar
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        size_hint_y: 0.1
+
+                        # counter
+                        GridLayout:
+                            size_hint_x: 0.3
+                            rows: 2
+                            cols: 2
+                            spacing: '8dp'
+                            canvas.before:
+                                Color:
+                                    rgba: 0.1, 0.1, 0.2, 1
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
+
+                            StrLabel:
+                                text: "write : "
+
+                            StrLabel:
+                                text: str(root.w_counter)
+                                canvas.before:
+                                    Color:
+                                        rgba: 0.2, 0.2, 0.2, 1
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+
+                            StrLabel:
+                                text: "read :"
+
+                            StrLabel:
+                                text: str(root.r_counter)
+                                canvas.before:
+                                    Color:
+                                        rgba: 0.2, 0.2, 0.2, 1
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+
+                        # guidance window
+                        StrLabel:
+                            size_hint_x: 0.7
+                            text: root.guide_msg
+                            canvas.before:
+                                Color:
+                                    rgba: 0.1, 0.1, 0.2, 1
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
+
+
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_x: 0.15
+                    canvas.before:
+                        Color:
+                            rgba: 0.2, 0.2, 0.2, 1
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_y: 0.3
+
+                        class_label_spinner: class_label_spinner
+                        # Class spinner
+                        Spinner:
+                            id: class_label_spinner
+                            font_size: 20
+                            text: 'Class'
+                            values: root.label_list
+                            background_color: 0.4, 0.4, 0.8, 1
+                            on_text: root.setId(self.text)
+
+                        # Keep label select
+                        BoxLayout:
+                            padding: 10, 0, 10, 0
+                            CheckBox:
+                                active: True
+                                size_hint_x: 0.1
+                                on_press: root.setKeep(self.active)
+                            StrLabel:
+                                size_hint_x: 0.9
+                                text: 'Keep Label'
+
+                    # Command
+                    GridLayout:
+                        size_hint_y: 0.7
+                        rows: 5
+                        spacing: '8dp'
+                        padding: 20,10,20, 10
+
+                        StateButton:
+                            id: add_btn
+                            text: 'Add'
+                            group: 'state'
+                            state: 'down'
+                            on_press: root.setState('addanno')
+
+                        StateButton:
+                            id: erase_btn
+                            text: 'Erase'
+                            group: 'state'
+                            on_press: root.setState('eraseanno')
+
+                        StateButton:
+                            id: mod_btn
+                            text: 'Modify'
+                            group: 'state'
+                            on_press: root.setState('modanno')
+
+                        CommandButton:
+                            id: save_btn
+                            text: "Save"
+                            on_press: root.runCommand('norun')
+
+                        CommandButton:
+                            id: skip_btn
+                            text: "Skip"
+                            on_press: root.runCommand('skip')
