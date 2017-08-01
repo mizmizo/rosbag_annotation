@@ -137,6 +137,8 @@ class AnnotationOperator:
         data.rected_image = data.image.copy()
         for name, rect in zip(data.class_vec, data.rect_vec):
             cv2.rectangle(data.rected_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
+            text_pos = (rect[0][0], rect[0][1] - 5)
+            cv2.putText(data.rected_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
 
     def wait_command(self, container, preset_com = [""], ignore_state = "" , msg = ""):
         if msg != "":
@@ -226,6 +228,8 @@ class AnnotationOperator:
                            (max(self.ref_pt[0][0], tmp_pt[0]), max(self.ref_pt[0][1], tmp_pt[1]))]
                 tmp_image = data.rected_image.copy()
                 cv2.rectangle(tmp_image, swap_pt[0], swap_pt[1], self.__color_list[int(self.selected_id)], 2)
+                text_pos = (swap_pt[0][0], swap_pt[0][1] - 5)
+                cv2.putText(tmp_image, data.id_dict[self.selected_id], text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(self.selected_id)])
                 cv2.imshow(window, tmp_image)
                 cv2.waitKey(1)
 
@@ -296,6 +300,8 @@ class AnnotationOperator:
                 tmp_image = data.image.copy()
                 for name, rect in zip(data.class_vec, tmp_rects):
                     cv2.rectangle(tmp_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
+                    text_pos = (rect[0][0], rect[0][1] - 5)
+                    cv2.putText(tmp_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
                 cv2.imshow(window_name, tmp_image)
                 cv2.waitKey(1)
 
