@@ -4,11 +4,23 @@ Tools for generating iamge dataset for digits from rosbag.
 
 TBD: caffe and chainer style dataset generating
 
+## 1. Requirements ##
+
+- ROS(indigo or newer)
+- OpenCV(only checked on version 3.1.0)
+- numpy
+- cython
+- kivy
+- xsel
+- xclip
+
 ---
 
-## 1. Image Annotation ##
+## 2. Image Annotation ##
 
-### 1-1. GUI Annotation Tool ###
+### 2-1. GUI Annotation Tool ###
+
+![annotation](images/annotation.png)
 
 Usage:  
 ```
@@ -16,11 +28,11 @@ $ ./image_annotation.py
 ```
 
 Then you can input parameters as the image below:
-*image : TBD*
+![setup](images/setup.png)
 
 Click 'Start' button to start annotation.
 
-### 1-1. GUI Annotation Tool ###
+### 2-1. GUI Annotation Tool ###
 
 Usage:  
 1. Revise image_topic and save_directory in cui_image_annotation.py(L17,18). save_directory must contain two child directories named "images" and "labels".  
@@ -34,7 +46,7 @@ You can see detailed usage for labelling by type 'h' after start running image_a
 
 ---
 
-## 2. Check annotation ##
+## 3. Check annotation ##
 
 You can check annotation result as:  
 ```

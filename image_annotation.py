@@ -158,7 +158,7 @@ class TouchTracer(Label, Image):
     def __init__(self, **kwargs):
         super(TouchTracer, self).__init__(**kwargs)
         Clock.schedule_interval(self.update, 1.0 / 30)
-        self.image = cv2.imread("dummy.jpg")
+        self.image = cv2.imread("images/dummy.jpg")
         self.touch_pos = []
         self.touch_event = None
 
