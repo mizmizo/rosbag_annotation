@@ -64,8 +64,6 @@ class AnnotationWidget(Screen, Label, Image):
         if self.touch_pos != self.ids.image_view.touch_pos or self.touch_event != self.ids.image_view.touch_event:
             self.touch_pos = self.ids.image_view.touch_pos
             self.touch_event = self.ids.image_view.touch_event
-            #print("touch pos  : {0}, {1}".format(self.touch_pos[0], self.touch_pos[1]))
-            #print("touch state: {0}".format(self.touch_event))
             self.operator.click_annotate_rect(self.touch_event,
                                               self.touch_pos[0], self.touch_pos[1],
                                               self.container, self.selected_label)
@@ -124,6 +122,7 @@ class AnnotationWidget(Screen, Label, Image):
         self.container.register_dict(self.class_path)
         for x, name in sorted(self.container.id_dict.items()):
             self.label_list.append(name)
+        self.container.save_directory = self.save_directory
         self.operator = ao.AnnotationOperator()
         self.operator.generate_colorlist(len(self.container.id_dict))
         self.selected_label = self.label_list[1]
@@ -155,12 +154,10 @@ class AnnotationWidget(Screen, Label, Image):
         self.readOneMsg()
 
     def setId(self, val):
-        print(val)
         self.selected_label = val
 
     def setKeep(self, flag):
         self.container.keep_label = flag
-        print(flag)
 
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):

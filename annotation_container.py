@@ -20,7 +20,7 @@ random.seed(5)
 
 class AnnotationContainer:
     def __init__(self, save_directory, init_counter, keep_label = True):
-        self.__save_directory = '/home/hiroto/data/conveni/train_data'
+        self.save_directory = ''
         self.image = None ## image with dots
         self.rected_image = None ## image with dots and rects
         self.disp_image = None ## image to display
@@ -50,8 +50,6 @@ class AnnotationContainer:
         except Exception as e:
             print (e)
 
-        print("\nread  iteration: {0}".format(self.r_counter))
-        print("write iteration: {0}".format(self.w_counter))
         self.r_counter += 1
         self.__save_image = self.image.copy()
         stride = 16
@@ -65,13 +63,13 @@ class AnnotationContainer:
         if not len(self.class_vec) == 0 and save:
             ## write to file
             suffix_name = str(self.w_counter).zfill(6)
-            text_file = open(self.__save_directory + '/labels/' + suffix_name + '.txt', 'w')
+            text_file = open(self.save_directory + '/labels/' + suffix_name + '.txt', 'w')
             for name, rect in zip(self.class_vec, self.rect_vec):
                 text_file.write('%s 0.0 0.0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
                                 (name, float(rect[0][0]), float(rect[0][1]),
                                  float(rect[1][0]), float(rect[1][1])))
             text_file.close()
-            cv2.imwrite(self.__save_directory + '/images/' + suffix_name + '.jpg', self.__save_image)
+            cv2.imwrite(self.save_directory + '/images/' + suffix_name + '.jpg', self.__save_image)
             self.w_counter += 1
         if not self.keep_label:
             self.class_vec = []
