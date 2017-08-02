@@ -89,17 +89,31 @@ AnnotationWidget:
 
                     StrLabel:
                         size_hint_x: 0.25
-                        text: 'Start counter'
+                        text: 'Start writing counter'
                     TextInput:
                         size_hint_x: 0.75
                         size_hint_y: None
                         height: '32dp'
-                        id: start_counter
+                        id: start_w_counter
                         multiline: False
                         text: "0"
 
                 BoxLayout:
-                    size_hint_y: 0.4
+                    size_hint_y: 0.1
+
+                    StrLabel:
+                        size_hint_x: 0.25
+                        text: 'Start reading counter'
+                    TextInput:
+                        size_hint_x: 0.75
+                        size_hint_y: None
+                        height: '32dp'
+                        id: start_r_counter
+                        multiline: False
+                        text: "0"
+
+                BoxLayout:
+                    size_hint_y: 0.3
                     StrLabel:
                         id: error_window
                         text: root.guide_msg
@@ -114,7 +128,7 @@ AnnotationWidget:
                         size_hint: None, None
                         size: '150dp', '48dp'
                         text: "Start"
-                        on_release: root.startAnnotation(sm, bagfile_path, topic_name, class_list, save_path, start_counter)
+                        on_release: root.startAnnotation(sm, bagfile_path, topic_name, class_list, save_path, start_w_counter, start_r_counter)
 
 ## ==== Annotation ==== ##
 

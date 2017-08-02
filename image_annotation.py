@@ -45,7 +45,7 @@ class AnnotationWidget(Screen, Label, Image):
 
     def __init__(self, **kwargs):
         super(AnnotationWidget, self).__init__(**kwargs)
-        Clock.schedule_interval(self.update, 1.0 / 30)
+        Clock.schedule_interval(self.update, 1.0 / 60)
         self.state = 'addanno'
         self.label_list = []
         self.guide_msg = ""
@@ -74,7 +74,7 @@ class AnnotationWidget(Screen, Label, Image):
     def resetupdate(self):
         self.touch_event = 3
 
-    def startAnnotation(self, sm, bag, topic, class_list, save_dir, start):
+    def startAnnotation(self, sm, bag, topic, class_list, save_dir, start_w, start_r):
         # bagfile
         try:
             self.bag = rosbag.Bag(bag.text, 'r')
@@ -107,7 +107,14 @@ class AnnotationWidget(Screen, Label, Image):
             return
         # start writing counter
         try:
-            self.w_counter = int(start.text)
+            self.w_counter = int(start_w.text)
+        except Exception as e:
+            self.guide_msg = "Enter integer in start counter!"
+            return
+
+        # start writing counter
+        try:
+            self.r_counter = int(start_r.text)
         except Exception as e:
             self.guide_msg = "Enter integer in start counter!"
             return
@@ -124,7 +131,8 @@ class AnnotationWidget(Screen, Label, Image):
         self.image_msgs = self.bag.read_messages(topics=[self.image_topic])
         self.operator.state = self.state
         self.guide_msg = self.operator.guide_msgs[self.state]
-
+        for i in xrange(self.r_counter):
+            self.image_msgs.next()
         self.readOneMsg()
         sm.current = 'Annotation'
 
@@ -157,7 +165,7 @@ class AnnotationWidget(Screen, Label, Image):
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):
         super(TouchTracer, self).__init__(**kwargs)
-        Clock.schedule_interval(self.update, 1.0 / 30)
+        Clock.schedule_interval(self.update, 1.0 / 60)
         self.image = cv2.imread("dummy.jpg")
         self.touch_pos = []
         self.touch_event = None
