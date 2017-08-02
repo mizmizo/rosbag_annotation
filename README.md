@@ -1,24 +1,52 @@
 # Image annotation tools #
 
-Tools for generating learning dataset for caffe from rosbag.
+Tools for generating iamge dataset for digits from rosbag.
+
+TBD: caffe and chainer style dataset generating
+
+## 1. Requirements ##
+
+- ROS(indigo or newer)
+- OpenCV(only checked on version 3.1.0)
+- numpy
+- cython
+- kivy
+- xsel
+- xclip
 
 ---
 
-## 1. Image Annotation ##
+## 2. Image Annotation ##
+
+### 2-1. GUI Annotation Tool ###
+
+![annotation](images/annotation.png)
 
 Usage:  
-1. Revise image_topic and save_directory in image_annotation.py(L18,19). save_directory must contain two child directories named "images" and "labels".
-2. Write class list text file. Sample is class_list.txt
+```
+$ ./image_annotation.py
+```
+
+Then you can input parameters as the image below:
+![setup](images/setup.png)
+
+Click 'Start' button to start annotation.
+
+### 2-1. GUI Annotation Tool ###
+
+Usage:  
+1. Revise image_topic and save_directory in cui_image_annotation.py(L17,18). save_directory must contain two child directories named "images" and "labels".  
+2. Write class list text file. Sample is class_list.txt  
 3. Run image_annotation as below.
 ```
-$ ./image_annotatin.py <bagfile_name> <class_list>
+$ ./cui_image_annotatin.py <bagfile_name> <class_list>
 ```
 
 You can see detailed usage for labelling by type 'h' after start running image_annotation.
 
 ---
 
-## 2. Check annotation ##
+## 3. Check annotation ##
 
 You can check annotation result as:  
 ```
