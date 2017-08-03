@@ -32,9 +32,11 @@ class AnnotationContainer:
         self.r_counter = 0
         self.w_counter = init_counter
         self.keep_label = keep_label
-        if save_directory.find("/") != len(save_directory) - 1:
-            save_directory = save_directory + "/"
+        # check directory
         self.__save_directory = save_directory
+        for dname in ("/images/", "/labels/"):
+            if not os.path.isdir(self.__save_directory + dname):
+                os.mkdir(self.__save_directory + dname)
 
     def register_dict(self, class_path):
         if len(self.id_dict) != 0 or len(self.id_reverse_dict) != 0:
