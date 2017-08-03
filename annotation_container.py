@@ -74,7 +74,7 @@ class AnnotationContainer:
             suffix_name = str(self.w_counter).zfill(6)
             text_file = open(self.__save_directory + '/labels/' + suffix_name + '.txt', 'w')
             for name, rect in zip(self.class_vec, self.rect_vec):
-                text_file.write('%s 0.0 0.0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
+                text_file.write('%s 0.0 0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
                                 (name, float(rect[0][0]), float(rect[0][1]),
                                  float(rect[1][0]), float(rect[1][1])))
             text_file.close()
