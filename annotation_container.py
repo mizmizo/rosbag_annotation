@@ -20,11 +20,10 @@ random.seed(5)
 
 class AnnotationContainer:
     def __init__(self, save_directory, init_counter, keep_label = True):
-        self.save_directory = ''
         self.image = None ## image with dots
         self.rected_image = None ## image with dots and rects
         self.disp_image = None ## image to display
-        self.__save_image = None ## original image
+        self.save_image = None ## original image
         self.id_dict = {}
         self.id_reverse_dict = {}
         self.class_vec = []
@@ -33,6 +32,9 @@ class AnnotationContainer:
         self.r_counter = 0
         self.w_counter = init_counter
         self.keep_label = keep_label
+        if save_directory.find("/") != len(save_directory) - 1:
+            save_directory = save_directory + "/"
+        self.__save_directory = save_directory
 
     def register_dict(self, class_path):
         if len(self.id_dict) != 0 or len(self.id_reverse_dict) != 0:
@@ -44,6 +46,11 @@ class AnnotationContainer:
             self.id_dict[pair[1]] = pair[0] ## key: id value: name
             self.id_reverse_dict[pair[0]] = pair[1] ## key: name value: id
 
+    def show_dict(self):
+        print("Class list:")
+        for x, name in sorted(self.id_dict.items()):
+            print("ID:{0} Class:{1}".format(x, name))
+
     def load_image_from_msg(self, msg, enc = "bgr8"):
         try:
             self.image = self.__bridge.imgmsg_to_cv2(msg, enc)
@@ -51,7 +58,7 @@ class AnnotationContainer:
             print (e)
 
         self.r_counter += 1
-        self.__save_image = self.image.copy()
+        self.save_image = self.image.copy()
         stride = 16
         for j in xrange(0, self.image.shape[0], stride):
             for i in xrange(0, self.image.shape[1], stride):
@@ -63,13 +70,13 @@ class AnnotationContainer:
         if not len(self.class_vec) == 0 and save:
             ## write to file
             suffix_name = str(self.w_counter).zfill(6)
-            text_file = open(self.save_directory + '/labels/' + suffix_name + '.txt', 'w')
+            text_file = open(self.__save_directory + '/labels/' + suffix_name + '.txt', 'w')
             for name, rect in zip(self.class_vec, self.rect_vec):
                 text_file.write('%s 0.0 0.0 0.0 %s %s %s %s 0.0 0.0 0.0 0.0 0.0 0.0 0.0\n' %
                                 (name, float(rect[0][0]), float(rect[0][1]),
                                  float(rect[1][0]), float(rect[1][1])))
             text_file.close()
-            cv2.imwrite(self.save_directory + '/images/' + suffix_name + '.jpg', self.__save_image)
+            cv2.imwrite(self.__save_directory + '/images/' + suffix_name + '.jpg', self.save_image)
             self.w_counter += 1
         if not self.keep_label:
             self.class_vec = []

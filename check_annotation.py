@@ -53,8 +53,12 @@ def check_data(data_directory, class_path):
         for line in open(data_directory + "/labels/" + label_name, "r"):
             line = line.rstrip("\n")
             label = line.split()[0]
-            rect = line.split()[4:8]
-            roi = [(int(float(rect[0])), int(float(rect[1]))),(int(float(rect[2])), int(float(rect[3])))]
+            rect_str = line.split()[4:8]
+            rect = []
+            for i in xrange(len(rect_str)):
+                rect.append(int(float(rect_str[i])))
+            roi = [(rect[0], rect[1]), (rect[2], rect[3])]
+
             cv2.rectangle(image, roi[0], roi[1], color_list[int(id_dict[label])], 2)
             roi.append((roi[0][0], roi[0][1] - 5)) # offset for text
             cv2.putText(image, label, roi[2], cv2.FONT_HERSHEY_TRIPLEX, 1.0, color_list[int(id_dict[label])])

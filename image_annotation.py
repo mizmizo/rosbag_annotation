@@ -96,8 +96,6 @@ class AnnotationWidget(Screen, Label, Image):
         if save_dir.text == "":
             self.guide_msg = "Save directory is Empty!"
             return
-        elif save_dir.text.find("/") != len(save_dir.text) - 1:
-            self.save_directory = save_dir.text + "/"
         else:
             self.save_directory = save_dir.text
         if not os.path.isdir(self.save_directory):
@@ -122,7 +120,6 @@ class AnnotationWidget(Screen, Label, Image):
         self.container.register_dict(self.class_path)
         for x, name in sorted(self.container.id_dict.items()):
             self.label_list.append(name)
-        self.container.save_directory = self.save_directory
         self.operator = ao.AnnotationOperator()
         self.operator.generate_colorlist(len(self.container.id_dict))
         self.selected_label = self.label_list[1]
