@@ -18,12 +18,13 @@ import imgaug as ia
 from imgaug import augmenters as iaa
 
 start_counter = 0 ## Start saving label from this number
+visualize = False
+aug_size = 7
 
 window_name = 'image_augmentation'
 random.seed(5)
 color_list = []
-aug_size = 5
-show_time = 200 # show each image and label for show_time ms
+show_time = 100 # show each image and label for show_time ms
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -40,7 +41,8 @@ def data_augmentation(data_directory, save_directory, class_path):
     for i in xrange(len(container.id_dict)):
         color_list.append(rand_list[i * 3:(i + 1) * 3])
 
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    if visualize:
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     ## get image and label name list
     image_list = sorted(os.listdir(data_directory + "/images/"))
@@ -51,6 +53,7 @@ def data_augmentation(data_directory, save_directory, class_path):
     ## load label and visualize
     for image_name, label_name in zip(image_list, label_list):
 
+        print("processing {0}...".format(image_name))
         # read image and label
         images = []
         image = cv2.imread(data_directory + "/images/" + image_name, -1)
@@ -95,7 +98,7 @@ def data_augmentation(data_directory, save_directory, class_path):
         # ===== Revise here to chenge augmentation ===== #
         sometimes = lambda aug: iaa.Sometimes(0.5, aug)
         seq = iaa.Sequential([sometimes(iaa.GaussianBlur((0, 2.0))),
-                              iaa.Crop(percent=(0, 0.2)),
+                              #iaa.Crop(percent=(0, 0.2)),
                               iaa.Affine(
                                   scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
                                   translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)},
@@ -156,10 +159,11 @@ def data_augmentation(data_directory, save_directory, class_path):
             # save new label and image
             container.save_image = image_after
             container.finish_imageproc()
-            cv2.imshow(window_name, np.concatenate((image_before, image_rected_after), axis=1))
-            key = cv2.waitKey(show_time) & 0xFF
-            if chr(key) == 'q':
-                return
+            if visualize:
+                cv2.imshow(window_name, np.concatenate((image_before, image_rected_after), axis=1))
+                key = cv2.waitKey(show_time) & 0xFF
+                if chr(key) == 'q':
+                    return
 
 def main(argv):
     if len(argv) < 4:
