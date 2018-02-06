@@ -13,9 +13,14 @@ from cv_bridge import CvBridge
 
 id_dict = {}
 window_name = 'annotation_check'
-random.seed(5)
 color_list = []
-show_time = 5 # show each image and label for show_time ms
+
+## == params == ##
+random.seed(5)
+show_time = 40 # show each image and label for show_time ms
+save_image = True
+save_dir = os.environ["HOME"] + "/tmp_data/conveni_data/for_drive/original_data/fcsc/with_annotation/"
+save_step = 1
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -66,6 +71,10 @@ def check_data(data_directory, class_path):
         sys.stdout.write("\rShowing %s" % image_name)
         sys.stdout.flush()
         cv2.imshow(window_name, image)
+        if save_image and (load_cnt % save_step) == 0:
+            save_name = save_dir + image_name
+            cv2.imwrite(save_name, image)
+        load_cnt += 1
         key = cv2.waitKey(show_time) & 0xFF
         if chr(key) == 'q':
             return
