@@ -54,7 +54,7 @@ Then you can input parameters as the image below:
 ![setup](images/setup.png)
 
 Parameters are:  
-- Rosbag File : source rosbag file full path which contains Sensor\_msgs/Image topic data.  
+- Rosbag File : source rosbag file full path which contains sensor\_msgs/Image topic data.  
 - Topic of Interest : Name of the image topic  
 - Class List : Full path to the text file which contains a list of classes. Sample is class\_list.txt  
 - Save Directory : Full path to the directory to save annotated dataset.  
@@ -66,17 +66,17 @@ Click 'Start' button to start annotation.
 ![annotation](images/annotation_usage.png)
 
 Annotation usage:
-- 1. Class spinner : Selected class name for adding new label.  
-- 2. Label option  : If activated, keep previous labels in save/skip  
-- 3. Sate button   :  
+- 1 Class spinner : Selected class name for adding new label.  
+- 2 Label option  : If activated, keep previous labels in save/skip  
+- 3 Sate button   :  
   * Add    : add new label (selected class)  
   * Erase  : erase clicked label  
   * Modify : Reshape label by dragging a vertex of the label, move by dragging the center.  
-- 4. Finish button :
+- 4 Finish button :
   * Save   : Save current image and labels, go to next image.  
   * Skip   : Go to next image without saving.
 
-Annotated dataset will be saved in <Save Directory>/images/ and <Save Directory>/labels/.  
+Annotated dataset will be saved in \<Save Directory\>/images/ and \<Save Directory\>/labels/.  
 Those data have digits detection format (same as KITTI except score).  
 You can use the dataset from chainer with rosbag\_annotaion.chainer\_dataset module.
 
@@ -96,7 +96,7 @@ You can see detailed usage for labelling by type 'h' after start running image\_
 
 ---
 
-## 3. Data augmentation ##
+## 4. Data augmentation ##
 
 ```
 $ ./image_augmentation.py <data_directory> <save_directory> <class_list>
@@ -104,13 +104,13 @@ $ ./image_augmentation.py <data_directory> <save_directory> <class_list>
 
 ---
 
-## 4. Split training data and validation data ##
+## 5. Split training data and validation data ##
 
 ```
 $ ./split_train_val.py <data_directory> <save_directory>
 ```
 
-## 5. Check annotation ##
+## 6. Check annotation ##
 
 You can check annotation result as:  
 ```
