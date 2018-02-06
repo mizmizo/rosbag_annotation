@@ -8,8 +8,8 @@ TBD: caffe and chainer style dataset generating
 
 - ROS(indigo or newer)
 - OpenCV(only checked on version 3.1.0)
-- [imgaug](tmp_data/conveni_data/8class_train_data)
-- [kivy](tmp_data/conveni_data/8class_train_data)
+- [imgaug](https://github.com/aleju/imgaug)
+- [kivy](https://kivy.org/docs/installation/installation-linux.html)
 - xsel
 - xclip
 
