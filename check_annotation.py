@@ -39,7 +39,7 @@ def check_data(data_directory, class_path):
     for i in xrange(len(id_dict)):
         color_list.append(rand_list[i * 3:(i + 1) * 3])
 
-    cv2.namedWindow(window_name)
+    cv2.namedWindow(window_name, cv2.WINDOW_KEEPRATIO | cv2.WINDOW_NORMAL)
 
     ## get image and label name list
     image_list = sorted(os.listdir(data_directory + "/images/"))
@@ -63,6 +63,8 @@ def check_data(data_directory, class_path):
             roi.append((roi[0][0], roi[0][1] - 5)) # offset for text
             cv2.putText(image, label, roi[2], cv2.FONT_HERSHEY_TRIPLEX, 1.0, color_list[int(id_dict[label])])
 
+        sys.stdout.write("\rShowing %s" % image_name)
+        sys.stdout.flush()
         cv2.imshow(window_name, image)
         key = cv2.waitKey(show_time) & 0xFF
         if chr(key) == 'q':

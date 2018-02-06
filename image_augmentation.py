@@ -11,11 +11,9 @@ import random
 import time
 import annotation_container as ac
 
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge
-
 import imgaug as ia
 from imgaug import augmenters as iaa
+from sklearn.utils import shuffle
 
 start_counter = 0 ## Start saving label from this number
 visualize = False
@@ -44,9 +42,10 @@ def data_augmentation(data_directory, save_directory, class_path):
     if visualize:
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
-    ## get image and label name list
+    ## get image and label name list and shuffle them
     image_list = sorted(os.listdir(data_directory + "/images/"))
     label_list = sorted(os.listdir(data_directory + "/labels/"))
+    image_list, label_list = shuffle(image_list, label_list)
 
     print("Start augmentation, type 'q' for quiting.")
 

@@ -12,7 +12,7 @@ val_ratio = 0.1 # default: split 10% of original to validation
 keep_original = False # delete original file when False
 
 def data_split(data_directory, save_directory):
-    # check directory
+    # check directory and setup
     for splitname in ("/train/", "/val/"):
         if not os.path.isdir(save_directory + splitname):
             os.mkdir(save_directory + splitname)
