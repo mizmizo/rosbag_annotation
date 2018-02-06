@@ -16,6 +16,8 @@ from cv_bridge import CvBridge
 
 random.seed(5)
 
+## === Annotated Data container === ##
+
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
 class AnnotationContainer:

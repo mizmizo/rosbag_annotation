@@ -43,7 +43,7 @@ AnnotationWidget:
                         height: '32dp'
                         id: bagfile_path
                         multiline: False
-                        text: "/home/hiroto/data/conveni/datas/01.bag"
+                        text: "/media/hiroto/volume/conveni/bag/whole_items/"
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -69,7 +69,7 @@ AnnotationWidget:
                         height: '32dp'
                         id: class_list
                         multiline: False
-                        text: "class_list.txt"
+                        text: "whole_conveni_class_list.txt"
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -82,7 +82,7 @@ AnnotationWidget:
                         height: '32dp'
                         id: save_path
                         multiline: False
-                        text: "/home/hiroto/data/conveni/train_data"
+                        text: "/media/hiroto/volume/conveni/whole_item_train_data/"
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -150,7 +150,7 @@ AnnotationWidget:
                         id: image_view
                         texture: self.texture
                         allow_stretch: True
-                        kepp_ratio: True
+                        keep_ratio: True
                         width: self.parent.width
                         height: self.parent.width/self.image_ratio
 

@@ -14,6 +14,8 @@ import random
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
+## === Annotation container data operator with clicked point data === ##
+
 class AnnotationOperator:
     def __init__(self):
         self.ref_pt = []
@@ -25,7 +27,7 @@ class AnnotationOperator:
         self.__color_list = []
         self.guide_msgs = {'addanno':'Choose class and draw rectangles.',
                            'eraseanno':'Click a rectangle to erase.',
-                           'modanno':'Click a vertex of a rectangle to reshape, inside point to move.'}
+                           'modanno':'Drag a vertex of a rectangle to reshape, inside to move.'}
 
     def generate_colorlist(self, length):
         rand_list = [random.randint(0, 255) for i in xrange(length * 3)]
@@ -42,7 +44,7 @@ class AnnotationOperator:
 
     ## return  clicked rect_id and (0:left-top | 1:left-bottom | 2:right-bottom | 3:right-top | 4: center |  5:none)
     def click_rect_check(self, pt, rects):
-        vertex_thre = 8 # threthold for detecting vertex click in px
+        vertex_thre = 8 # threshold for detecting vertex click in px
         found_center_click = []
         found_vertex_click = []
         for i, rect in enumerate(rects):
@@ -59,6 +61,7 @@ class AnnotationOperator:
                 elif abs(rect[0][1] - pt[1]) < vertex_thre:
                     found_vertex_click.append((i, 3, np.sqrt(np.square((rect[1][0] - pt[0])) + np.square((rect[0][1] - pt[1]))))) # (id, vertex, dist)
 
+        # set click data to click_id, click_state
         if len(found_vertex_click) != 0:
             found_vertex_click.sort(key = lambda x:x[2])
             self.__click_id = found_vertex_click[0][0]
@@ -70,7 +73,7 @@ class AnnotationOperator:
             self.__click_id = 0
             self.__click_state = 5
 
-    def click_annotate_rect(self, event, x, y, data, selected_val): # data should AnnotationContainer
+    def click_annotate_rect(self, event, x, y, data, selected_val): # data should be AnnotationContainer
         # event: 0: down, 1: move, 2:up, 3:wait
         EVENT_LBUTTONDOWN = 0
         EVENT_LBUTTONMOVE = 1
@@ -134,10 +137,10 @@ class AnnotationOperator:
                         stable_pt.append(data.rect_vec[self.__click_id][0][1])
                     else: # bottom
                         stable_pt.append(data.rect_vec[self.__click_id][1][1])
-                    self.__mod_pt = [stable_pt, (0, 0)] # second is dammy
+                    self.__mod_pt = [stable_pt, (0, 0)] # second is dummy
                     self.__operating = True
                     return
-            elif event == EVENT_LBUTTONUP:
+            elif self.__operating and event == EVENT_LBUTTONUP:
                 new_rect = []
                 if len(self.__mod_pt) == 1: # center
                     move_pt = (x - self.__mod_pt[0][0], y - self.__mod_pt[0][1])

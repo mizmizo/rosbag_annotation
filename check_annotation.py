@@ -15,7 +15,7 @@ id_dict = {}
 window_name = 'annotation_check'
 random.seed(5)
 color_list = []
-show_time = 100 # show each image and label for show_time ms
+show_time = 5 # show each image and label for show_time ms
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 

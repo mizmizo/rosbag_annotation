@@ -108,7 +108,7 @@ class AnnotationWidget(Screen, Label, Image):
             self.guide_msg = "Enter integer in start counter!"
             return
 
-        # start writing counter
+        # start reading counter
         try:
             self.r_counter = int(start_r.text)
         except Exception as e:
