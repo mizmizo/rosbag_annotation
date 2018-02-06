@@ -1,2 +1,5 @@
 *.pyc
 *.html
+build/
+dist/
+RosbagAnnotation.egg-info/

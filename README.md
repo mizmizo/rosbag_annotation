@@ -1,21 +1,34 @@
-# Image annotation tools #
+# Rosbag annotation #
 
-Tools for generating iamge dataset for digits from rosbag.
-
-TBD: caffe and chainer style dataset generating
+Annotation tool for generating iamge dataset for digits and chainercv from rosbag.
 
 ## 1. Requirements ##
 
 - ROS(indigo or newer)
 - OpenCV(only checked on version 3.1.0)
+
+## 2. Installation ##
+
+### 2-1. annotation tool setup ###
+
+install.sh will install all requirements.
+```
+$ ./install.sh
+```
+
 - [imgaug](https://github.com/aleju/imgaug)
 - [kivy](https://kivy.org/docs/installation/installation-linux.html)
-- xsel
-- xclip
+
+**CAUTION**
+
+install.sh installs cython(0.25.2) and pygame from pip.
+Install imgaug and kivy manually if you are using different version for cython.
+
+### 2-2. setup chainer dataset ###
 
 ---
 
-## 2. Image Annotation ##
+## 3. Image Annotation ##
 
 ### 2-1. GUI Annotation Tool ###
 
@@ -23,15 +36,27 @@ TBD: caffe and chainer style dataset generating
 
 Usage:  
 ```
-$ ./image_annotation.py
+$ ./rosbag_annotation.py
 ```
 
 Then you can input parameters as the image below:
 ![setup](images/setup.png)
 
+Parameters are:  
+- Rosbag File : source rosbag file full path which contains Sensor_msgs/Image topic data.  
+- Topic of Interest : Name of the image topic  
+- Class List : Full path to the text file which contains a list of classes. Sample is class_list.txt  
+- Save Directory : Full path to the directory to save annotated dataset.  
+- Start writing counter : Number of topic reading iterations before annotation  
+- Start reading counter : This tool will start saving data with this number.
+
 Click 'Start' button to start annotation.
 
-### 2-2. CUI Annotation Tool ###
+Annotated dataset will be saved in <Save Directory>/images/ and <Save Directory>/labels/.  
+Those data have digits detection format (same as KITTI except score).
+You can use the dataset from chainer with detection_dataset.py.
+
+### 2-2. CUI Annotation Tool (deprecated) ###
 
 Usage:  
 1. Revise image_topic and save_directory in cui_image_annotation.py(L17,18).  
