@@ -18,7 +18,7 @@ color_list = []
 ## == params == ##
 random.seed(5)
 show_time = 40 # show each image and label for show_time ms
-save_image = True
+save_image = False
 save_dir = os.environ["HOME"] + "/tmp_data/conveni_data/for_drive/original_data/fcsc/with_annotation/"
 save_step = 1
 
@@ -49,6 +49,7 @@ def check_data(data_directory, class_path):
     ## get image and label name list
     image_list = sorted(os.listdir(data_directory + "/images/"))
     label_list = sorted(os.listdir(data_directory + "/labels/"))
+    load_cnt = 0
 
     print("Start checking annotation, type 'q' for quiting, any other key for next image.")
 
