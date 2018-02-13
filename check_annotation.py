@@ -21,6 +21,7 @@ show_time = 40 # show each image and label for show_time ms
 save_image = False
 save_dir = os.environ["HOME"] + "/tmp_data/conveni_data/for_drive/original_data/fcsc/with_annotation/"
 save_step = 1
+start = 0
 
 ## <label_string 0.0 0 0.0 x_min y_min x_max y_max 0.0 0.0 0.0 0.0 0.0 0.0 0.0>
 
@@ -54,7 +55,7 @@ def check_data(data_directory, class_path):
     print("Start checking annotation, type 'q' for quiting, any other key for next image.")
 
     ## load label and visualize
-    for image_name, label_name in zip(image_list, label_list):
+    for image_name, label_name in zip(image_list[start:], label_list[start:]):
         image = cv2.imread(data_directory + "/images/" + image_name)
         for line in open(data_directory + "/labels/" + label_name, "r"):
             line = line.rstrip("\n")
@@ -69,7 +70,7 @@ def check_data(data_directory, class_path):
             roi.append((roi[0][0], roi[0][1] - 5)) # offset for text
             cv2.putText(image, label, roi[2], cv2.FONT_HERSHEY_TRIPLEX, 1.0, color_list[int(id_dict[label])])
 
-        sys.stdout.write("\rShowing %s" % image_name)
+        sys.stdout.write("\rShowing %s, %s" % (image_name, label_name))
         sys.stdout.flush()
         cv2.imshow(window_name, image)
         if save_image and (load_cnt % save_step) == 0:
