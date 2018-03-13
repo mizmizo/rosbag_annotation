@@ -30,9 +30,6 @@ from kivy.uix.screenmanager import Screen
 
 random.seed(5)
 
-container = None
-operator = None
-
 class AnnotationWidget(Screen, Label, Image):
     label_list = ListProperty()
     selected_label = StringProperty()
@@ -52,8 +49,8 @@ class AnnotationWidget(Screen, Label, Image):
         self.image_topic = ''
         self.save_directory = ''
         self.bag = None
-        self.container = container
-        self.operator = operator
+        self.container = None
+        self.operator = None
         self.image_msgs = None
         self.touch_pos = []
         self.touch_event = None # 0: down, 1: move, 2:up, 3:wait
@@ -66,9 +63,12 @@ class AnnotationWidget(Screen, Label, Image):
                                               self.touch_pos[0], self.touch_pos[1],
                                               self.container, self.selected_label)
             self.ids.image_view.setImage(self.container.disp_image)
+            self.selected_label = self.operator.label
 
-    def resetupdate(self):
-        self.touch_event = 3
+    def screenupdate(self):
+        self.ids.image_view.setImage(self.container.disp_image)
+        self.selected_label = self.operator.label
+
 
     def startAnnotation(self, sm, bag, topic, class_list, save_dir, start_w, start_r):
         # bagfile
@@ -134,26 +134,31 @@ class AnnotationWidget(Screen, Label, Image):
         self.readOneMsg()
         sm.current = 'Annotation'
 
+
     def readOneMsg(self):
         topic, msg, t = self.image_msgs.next()
         self.container.load_image_from_msg(msg)
         self.operator.draw_rect(self.container)
         self.ids.image_view.setImage(self.container.disp_image)
 
+
     def setState(self, val):
         self.operator.set_state(val)
         self.selected_label = self.operator.label
         self.guide_msg = self.operator.guide_msgs[self.operator.state]
 
+
     def setLabel(self, val):
-        self.operator.set_label(val)
+        self.operator.set_label(val, self.container)
         self.selected_label = self.operator.label
+        self.screenupdate()
 
     def runCommand(self, val):
         self.container.finish_imageproc(save = (val == "norun"))
         self.w_counter = self.container.w_counter
         self.r_counter = self.container.r_counter
         self.readOneMsg()
+
 
     def setKeep(self, flag):
         # TODO : move keep_label to operator

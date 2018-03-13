@@ -22,6 +22,7 @@ class AnnotationOperator:
         self.state = None
         self.label = ''
         self.__click_id = None
+        self.__click_label = ''
         self.__click_state = None
         self.__operating = False
         self.__mod_pt = [] # [stable, moving]
@@ -39,7 +40,9 @@ class AnnotationOperator:
 
     def draw_rect(self, data):
         data.rected_image = data.image.copy()
-        for name, rect in zip(data.class_vec, data.rect_vec):
+        for idx, (name, rect) in enumerate(zip(data.class_vec, data.rect_vec)):
+            if idx == self.__click_id:
+                cv2.rectangle(data.rected_image, rect[0], rect[1], [255, 255, 255], 4)
             cv2.rectangle(data.rected_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
             text_pos = (rect[0][0], rect[0][1] - 5)
             cv2.putText(data.rected_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
@@ -51,23 +54,32 @@ class AnnotationOperator:
                     self.label = self.__addlabel
         elif self.state == "modanno" or self.state == "eraseanno":
                     self.label = self.__dummylabel
+                    self.__click_id = None
 
-    def set_label(self, val):
+    def set_label(self, val, data):
         if self.state == "addanno":
             self.__addlabel = val
             self.label = val
         elif self.state == "modanno":
             self.label = val
+            self.change_label(data)
             ## todo : change label call
         elif self.state == "eraseanno":
             self.label = self.__dummylabel
 
+    def change_label(self, data):
+        if self.__click_id != None:
+            data.class_vec[self.__click_id] = self.label
+            self.draw_rect(data)
+
 
     ## return  clicked rect_id and (0:left-top | 1:left-bottom | 2:right-bottom | 3:right-top | 4: center |  5:none)
-    def click_rect_check(self, pt, rects):
+    def click_rect_check(self, pt, data):
         vertex_thre = 8 # threshold for detecting vertex click in px
         found_center_click = []
         found_vertex_click = []
+        rects = data.rect_vec
+        labels = data.class_vec
         for i, rect in enumerate(rects):
             if rect[0][0] < pt[0] < rect[1][0] and rect[0][1] < pt[1] < rect[1][1]:
                 found_center_click.append(i)
@@ -86,13 +98,18 @@ class AnnotationOperator:
         if len(found_vertex_click) != 0:
             found_vertex_click.sort(key = lambda x:x[2])
             self.__click_id = found_vertex_click[0][0]
+            self.__click_label = labels[found_vertex_click[0][0]]
             self.__click_state = found_vertex_click[0][1]
         elif len(found_center_click) != 0:
             self.__click_id = found_center_click[0]
+            self.__click_label = labels[found_center_click[0]]
             self.__click_state = 4
         else:
-            self.__click_id = 0
+            self.__click_id = None
+            self.__click_label = self.__dummylabel
             self.__click_state = 5
+        if self.state == "modanno":
+            self.label = self.__click_label
 
     def click_annotate_rect(self, event, x, y, data, selected_val): # data should be AnnotationContainer
         # event: 0: down, 1: move, 2:up, 3:wait
@@ -132,17 +149,17 @@ class AnnotationOperator:
         ## Erase annotation
         elif self.state == "eraseanno":
             if event == EVENT_LBUTTONDOWN and len(data.class_vec) != 0:
-                self.click_rect_check((x, y), data.rect_vec)
+                self.click_rect_check((x, y), data)
                 if self.__click_state != 5: #  selected
                     del data.class_vec[self.__click_id]
                     del data.rect_vec[self.__click_id]
-                    self.draw_rect(data)
-                    return
+                self.draw_rect(data)
+                return
 
         ## Modify annotation
         elif self.state == "modanno":
             if event == EVENT_LBUTTONDOWN:
-                self.click_rect_check((x, y), data.rect_vec)
+                self.click_rect_check((x, y), data)
                 if self.__click_state == 4: # selected center
                     self.__mod_pt = [(x, y)]
                     self.__operating = True
@@ -160,6 +177,9 @@ class AnnotationOperator:
                         stable_pt.append(data.rect_vec[self.__click_id][1][1])
                     self.__mod_pt = [stable_pt, (0, 0)] # second is dummy
                     self.__operating = True
+                    return
+                else: # not selected
+                    self.draw_rect(data)
                     return
             elif self.__operating and event == EVENT_LBUTTONUP:
                 new_rect = []
@@ -192,7 +212,9 @@ class AnnotationOperator:
                 tmp_rects = data.rect_vec[:]
                 tmp_rects[self.__click_id] = tmp_rect
                 data.disp_image = data.image.copy()
-                for name, rect in zip(data.class_vec, tmp_rects):
+                for idx, (name, rect) in enumerate(zip(data.class_vec, tmp_rects)):
+                    if idx == self.__click_id:
+                        cv2.rectangle(data.disp_image, rect[0], rect[1], [255, 255, 255], 4)
                     cv2.rectangle(data.disp_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
                     text_pos = (rect[0][0], rect[0][1] - 5)
                     cv2.putText(data.disp_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
