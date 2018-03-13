@@ -20,11 +20,14 @@ class AnnotationOperator:
     def __init__(self):
         self.ref_pt = []
         self.state = None
+        self.label = ''
         self.__click_id = None
         self.__click_state = None
         self.__operating = False
         self.__mod_pt = [] # [stable, moving]
         self.__color_list = []
+        self.__addlabel = ''
+        self.__dummylabel = '---'
         self.guide_msgs = {'addanno':'Choose class and draw rectangles.',
                            'eraseanno':'Click a rectangle to erase.',
                            'modanno':'Drag a vertex of a rectangle to reshape, inside to move.'}
@@ -41,6 +44,24 @@ class AnnotationOperator:
             text_pos = (rect[0][0], rect[0][1] - 5)
             cv2.putText(data.rected_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
         data.disp_image = data.rected_image.copy()
+
+    def set_state(self, state):
+        self.state = state
+        if self.state == "addanno":
+                    self.label = self.__addlabel
+        elif self.state == "modanno" or self.state == "eraseanno":
+                    self.label = self.__dummylabel
+
+    def set_label(self, val):
+        if self.state == "addanno":
+            self.__addlabel = val
+            self.label = val
+        elif self.state == "modanno":
+            self.label = val
+            ## todo : change label call
+        elif self.state == "eraseanno":
+            self.label = self.__dummylabel
+
 
     ## return  clicked rect_id and (0:left-top | 1:left-bottom | 2:right-bottom | 3:right-top | 4: center |  5:none)
     def click_rect_check(self, pt, rects):

@@ -67,8 +67,8 @@ class AnnotationContainer:
         for j in xrange(0, self.image.shape[0], stride):
             for i in xrange(0, self.image.shape[1], stride):
                 cv2.circle(self.image, (i, j), 2, (100, 100, 100), -1)
-        self.rected_image = self.image.copy()
-        #self.disp_image = self.image.copy()
+        # self.rected_image = self.image.copy()
+        # self.disp_image = self.image.copy()
 
     def finish_imageproc(self, save = True):
         if not len(self.class_vec) == 0 and save:

@@ -34,7 +34,6 @@ container = None
 operator = None
 
 class AnnotationWidget(Screen, Label, Image):
-    state = StringProperty()
     label_list = ListProperty()
     selected_label = StringProperty()
     w_counter  = NumericProperty(0) ## just for display
@@ -46,7 +45,6 @@ class AnnotationWidget(Screen, Label, Image):
     def __init__(self, **kwargs):
         super(AnnotationWidget, self).__init__(**kwargs)
         Clock.schedule_interval(self.update, 1.0 / 60)
-        self.state = 'addanno'
         self.label_list = []
         self.guide_msg = ""
         self.bag_path = ''
@@ -116,17 +114,21 @@ class AnnotationWidget(Screen, Label, Image):
             return
 
         # preparation
+        # init container and operator
         self.container = ac.AnnotationContainer(self.save_directory, self.w_counter, True)
         self.container.register_dict(self.class_path)
         for x, name in sorted(self.container.id_dict.items()):
             self.label_list.append(name)
         self.operator = ao.AnnotationOperator()
         self.operator.generate_colorlist(len(self.container.id_dict))
-        self.selected_label = self.label_list[1]
-        self.ids.class_label_spinner.text = self.selected_label
+        self.setState('addanno')
+
+        # init spinner and guide message
+        #self.selected_label = self.label_list[1]
+        self.setLabel(self.label_list[1])
+        # self.ids.class_label_spinner.text = self.selected_label
+        # init rosbag reader and read one message
         self.image_msgs = self.bag.read_messages(topics=[self.image_topic])
-        self.operator.state = self.state
-        self.guide_msg = self.operator.guide_msgs[self.state]
         for i in xrange(self.r_counter):
             self.image_msgs.next()
         self.readOneMsg()
@@ -139,10 +141,13 @@ class AnnotationWidget(Screen, Label, Image):
         self.ids.image_view.setImage(self.container.disp_image)
 
     def setState(self, val):
-        prev_state = self.state
-        self.operator.state = val
-        self.state = self.operator.state
-        self.guide_msg = self.operator.guide_msgs[self.state]
+        self.operator.set_state(val)
+        self.selected_label = self.operator.label
+        self.guide_msg = self.operator.guide_msgs[self.operator.state]
+
+    def setLabel(self, val):
+        self.operator.set_label(val)
+        self.selected_label = self.operator.label
 
     def runCommand(self, val):
         self.container.finish_imageproc(save = (val == "norun"))
@@ -150,10 +155,8 @@ class AnnotationWidget(Screen, Label, Image):
         self.r_counter = self.container.r_counter
         self.readOneMsg()
 
-    def setId(self, val):
-        self.selected_label = val
-
     def setKeep(self, flag):
+        # TODO : move keep_label to operator
         self.container.keep_label = flag
 
 class TouchTracer(Label, Image):
