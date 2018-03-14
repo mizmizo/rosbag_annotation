@@ -29,9 +29,9 @@ class AnnotationOperator:
         self.__color_list = []
         self.__addlabel = ''
         self.__dummylabel = '---'
-        self.guide_msgs = {'addanno':'Choose class and draw rectangles.',
+        self.guide_msgs = {'addanno':'Choose class to add, then draw a rectangle.\nYou can choose class with a spinner on right-top or typing number (only 0-9)',
                            'eraseanno':'Click a rectangle to erase.',
-                           'modanno':'Drag a vertex of a rectangle to reshape, inside to move.'}
+                           'modanno':'Drag a vertex of a rectangle to reshape, inside to move, or select a class to change class.'}
 
     def generate_colorlist(self, length):
         rand_list = [random.randint(0, 255) for i in xrange(length * 3)]

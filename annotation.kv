@@ -143,7 +143,7 @@ AnnotationWidget:
 
                 BoxLayout:
                     orientation: 'vertical'
-                    size_hint_x: 0.85
+                    size_hint_x: 0.82
 
                     # Image
                     image_view: image_view.__self__
@@ -203,6 +203,9 @@ AnnotationWidget:
                         StrLabel:
                             size_hint_x: 0.7
                             text: root.guide_msg
+                            valign: 'middle'
+                            halign: 'center'
+                            text_size: self.size
                             canvas.before:
                                 Color:
                                     rgba: 0.1, 0.1, 0.2, 1
@@ -213,7 +216,7 @@ AnnotationWidget:
 
                 BoxLayout:
                     orientation: 'vertical'
-                    size_hint_x: 0.15
+                    size_hint_x: 0.18
                     canvas.before:
                         Color:
                             rgba: 0.2, 0.2, 0.2, 1
