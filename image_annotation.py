@@ -173,8 +173,9 @@ class AnnotationWidget(Screen, Label, Image):
 
     def keyboardCallback(self, keyboard, keycode, text, modifiers):
         if text.isdigit():
-            self.setLabel(self.label_list[int(text)])
-            self.screenupdate()
+            if int(text) < len(self.label_list):
+                self.setLabel(self.label_list[int(text)])
+                self.screenupdate()
 
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):

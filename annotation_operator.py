@@ -127,14 +127,13 @@ class AnnotationOperator:
                 self.ref_pt = [(x, y)]
                 self.__operating = True
                 return
-            elif event == EVENT_LBUTTONUP:
+            elif self.__operating and event == EVENT_LBUTTONUP:
                 self.ref_pt.append((x, y))
                 swap_pt = [(min(self.ref_pt[0][0], self.ref_pt[1][0]), min(self.ref_pt[0][1], self.ref_pt[1][1])),
                            (max(self.ref_pt[0][0], self.ref_pt[1][0]), max(self.ref_pt[0][1], self.ref_pt[1][1]))]
                 data.class_vec.append(selected_val)
                 data.rect_vec.append(swap_pt)
                 self.draw_rect(data)
-
                 self.__operating = False
                 return
             elif self.__operating and event == EVENT_LBUTTONMOVE:
