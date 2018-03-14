@@ -27,6 +27,7 @@ from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
 from kivy.uix.screenmanager import Screen
+from kivy.core.window import Window
 
 random.seed(5)
 
@@ -38,6 +39,7 @@ class AnnotationWidget(Screen, Label, Image):
     guide_msg = StringProperty()
     image_view = ObjectProperty(None)
     class_label_spinner = ObjectProperty(None)
+
 
     def __init__(self, **kwargs):
         super(AnnotationWidget, self).__init__(**kwargs)
@@ -54,6 +56,7 @@ class AnnotationWidget(Screen, Label, Image):
         self.image_msgs = None
         self.touch_pos = []
         self.touch_event = None # 0: down, 1: move, 2:up, 3:wait
+        self.keyboard = None
 
     def update(self, dt):
         if self.touch_pos != self.ids.image_view.touch_pos or self.touch_event != self.ids.image_view.touch_event:
@@ -62,8 +65,7 @@ class AnnotationWidget(Screen, Label, Image):
             self.operator.click_annotate_rect(self.touch_event,
                                               self.touch_pos[0], self.touch_pos[1],
                                               self.container, self.selected_label)
-            self.ids.image_view.setImage(self.container.disp_image)
-            self.selected_label = self.operator.label
+            self.screenupdate()
 
     def screenupdate(self):
         self.ids.image_view.setImage(self.container.disp_image)
@@ -124,9 +126,10 @@ class AnnotationWidget(Screen, Label, Image):
         self.setState('addanno')
 
         # init spinner and guide message
-        #self.selected_label = self.label_list[1]
         self.setLabel(self.label_list[1])
-        # self.ids.class_label_spinner.text = self.selected_label
+        # init keyboard input
+        self.keyboard = Window.request_keyboard(self.keyboardShutdown, self)
+        self.keyboard.bind(on_key_down=self.keyboardCallback)
         # init rosbag reader and read one message
         self.image_msgs = self.bag.read_messages(topics=[self.image_topic])
         for i in xrange(self.r_counter):
@@ -163,6 +166,15 @@ class AnnotationWidget(Screen, Label, Image):
     def setKeep(self, flag):
         # TODO : move keep_label to operator
         self.container.keep_label = flag
+
+    def keyboardShutdown(self):
+        self.keyboard.unbind(on_key_down=self.keyboardCallback)
+        self.keyboard = None
+
+    def keyboardCallback(self, keyboard, keycode, text, modifiers):
+        if text.isdigit():
+            self.setLabel(self.label_list[int(text)])
+            self.screenupdate()
 
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):
