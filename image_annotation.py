@@ -46,20 +46,15 @@ class AnnotationWidget(Screen, Label, Image):
         Clock.schedule_interval(self.update, 1.0 / 60)
         self.label_list = []
         self.guide_msg = ""
-        self.bag_path = ''
-        self.class_path = ''
-        self.image_topic = ''
-        self.save_directory = ''
-        self.bag = None
         self.container = None
         self.operator = None
-        self.image_msgs = None
+        self.keyboard = None
         self.touch_pos = []
         self.touch_event = None # 0: down, 1: move, 2:up, 3:wait
-        self.keyboard = None
 
     def update(self, dt):
-        if self.touch_pos != self.ids.image_view.touch_pos or self.touch_event != self.ids.image_view.touch_event:
+        if (self.touch_pos != self.ids.image_view.touch_pos or
+            self.touch_event != self.ids.image_view.touch_event):
             self.touch_pos = self.ids.image_view.touch_pos
             self.touch_event = self.ids.image_view.touch_event
             self.operator.click_annotate_rect(self.touch_event,
@@ -72,56 +67,101 @@ class AnnotationWidget(Screen, Label, Image):
         self.selected_label = self.operator.label
 
 
-    def startAnnotation(self, sm, bag, topic, class_list, save_dir, start_w, start_r):
-        # bagfile
-        try:
-            self.bag = rosbag.Bag(bag.text, 'r')
-        except Exception as e:
-            self.guide_msg = "Bag File Error!"
-            return
-        # image topic
-        if topic.text == "":
-            self.guide_msg = "Topic name is Empty!"
-            return
+    def startAnnotation(self):
+        # setup image data : from rosbag
+        if not bool(self.ids.from_rosbag.collapse):
+            data_type = 0 ## 0: rosbag, 1: annotated
+            # bagfile
+            try:
+                bag = rosbag.Bag(self.ids.bagfile_path.text, 'r')
+            except Exception as e:
+                self.guide_msg = "Bag File Error!"
+                return
+            # image topic
+            if self.ids.topic_name.text == "":
+                self.guide_msg = "Topic name is Empty!"
+                return
+            else:
+                image_topic = self.ids.topic_name.text
         else:
-            self.image_topic = topic.text
+            # setup image data : from annotated data
+            data_type = 1
+            if self.ids.annotated_path.text == "":
+                self.guide_msg = "Input directory is Empty!"
+                return
+            else:
+                annotated_directory = self.ids.annotated_path.text
+                if not os.path.isdir(annotated_directory):
+                    self.guide_msg = "Invalid input directory name!"
+                    return
+                if (not os.path.isdir(annotated_directory + "/images/") or
+                    not os.path.isdir(annotated_directory + "/labels/")):
+                    self.guide_msg = "Input directory must have 'images' and 'labels' subdirectory."
+                    return
+                annotated_images = sorted(os.listdir(annotated_directory + "/images/"),
+                                          reverse=True)
+                annotated_labels = sorted(os.listdir(annotated_directory + "/labels/"),
+                                          reverse=True)
+                if len(annotated_images) != len(annotated_labels):
+                    self.guide_msg = "Images and labels number is different!"
+                    return
+
+
         # class list
-        if class_list.text == "":
+        if self.ids.class_list.text == "":
             self.guide_msg = "Class list is Empty!"
             return
         else:
-            self.class_path = class_list.text
+            class_path = self.ids.class_list.text
 
         # save directory
-        if save_dir.text == "":
+        if self.ids.save_path.text == "":
             self.guide_msg = "Save directory is Empty!"
             return
         else:
-            self.save_directory = save_dir.text
-        if not os.path.isdir(self.save_directory):
+            save_directory = self.ids.save_path.text
+        if not os.path.isdir(save_directory):
             self.guide_msg = "Invalid save directory name!"
             return
         # start writing counter
         try:
-            self.w_counter = int(start_w.text)
+            self.w_counter = int(self.ids.start_w_counter.text)
         except Exception as e:
             self.guide_msg = "Enter integer in start counter!"
             return
 
         # start reading counter
         try:
-            self.r_counter = int(start_r.text)
+            self.r_counter = int(self.ids.start_r_counter.text)
         except Exception as e:
             self.guide_msg = "Enter integer in start counter!"
             return
 
-        # preparation
+        ## preparation
+
+        # init input data
+        if data_type == 0:
+            # init rosbag reader and pop to start position
+            image_msgs = bag.read_messages(topics=[image_topic])
+            for i in xrange(self.r_counter):
+                image_msgs.next()
+        elif data_type == 1:
+            # init data reader and pop to start position
+            for i in xrange(self.r_counter):
+                annotated_images.pop()
+                annotated_labels.pop()
+
         # init container and operator
-        self.container = ac.AnnotationContainer(self.save_directory, self.w_counter, True)
-        self.container.register_dict(self.class_path)
+        self.container = ac.AnnotationContainer(save_directory, self.w_counter, True)
+        self.container.register_dict(class_path)
         for x, name in sorted(self.container.id_dict.items()):
             self.label_list.append(name)
-        self.operator = ao.AnnotationOperator()
+        if data_type == 0:
+            self.operator = ao.AnnotationOperator(data_type, image_msgs)
+        else:
+            self.operator = ao.AnnotationOperator(data_type, (annotated_directory,
+                                                              annotated_images,
+                                                              annotated_labels))
         self.operator.generate_colorlist(len(self.container.id_dict))
         self.setState('addanno')
 
@@ -130,20 +170,14 @@ class AnnotationWidget(Screen, Label, Image):
         # init keyboard input
         self.keyboard = Window.request_keyboard(self.keyboardShutdown, self)
         self.keyboard.bind(on_key_down=self.keyboardCallback)
-        # init rosbag reader and read one message
-        self.image_msgs = self.bag.read_messages(topics=[self.image_topic])
-        for i in xrange(self.r_counter):
-            self.image_msgs.next()
-        self.readOneMsg()
-        sm.current = 'Annotation'
+        self.readDataOnce()
+        self.ids.smanager.current = 'Annotation'
 
 
-    def readOneMsg(self):
-        topic, msg, t = self.image_msgs.next()
-        self.container.load_image_from_msg(msg)
+    def readDataOnce(self):
+        self.operator.pop_data(self.container)
         self.operator.draw_rect(self.container)
-        self.ids.image_view.setImage(self.container.disp_image)
-
+        self.screenupdate()
 
     def setState(self, val):
         self.operator.set_state(val)
@@ -156,16 +190,16 @@ class AnnotationWidget(Screen, Label, Image):
         self.selected_label = self.operator.label
         self.screenupdate()
 
+
     def runCommand(self, val):
-        self.container.finish_imageproc(save = (val == "norun"))
+        self.operator.finish_proc(val, self.container)
         self.w_counter = self.container.w_counter
         self.r_counter = self.container.r_counter
-        self.readOneMsg()
+        self.readDataOnce()
 
 
     def setKeep(self, flag):
-        # TODO : move keep_label to operator
-        self.container.keep_label = flag
+        self.operator.set_keep(flag)
 
     def keyboardShutdown(self):
         self.keyboard.unbind(on_key_down=self.keyboardCallback)
@@ -176,6 +210,12 @@ class AnnotationWidget(Screen, Label, Image):
             if int(text) < len(self.label_list):
                 self.setLabel(self.label_list[int(text)])
                 self.screenupdate()
+        elif text == 's':
+            self.runCommand('norun')
+            print("save")
+        elif text == 'n':
+            self.runCommand('skip')
+            print("skip")
 
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):

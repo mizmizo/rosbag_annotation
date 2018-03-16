@@ -17,7 +17,7 @@ color_list = []
 
 ## == params == ##
 random.seed(5)
-show_time = 40 # show each image and label for show_time ms
+show_time = 0 # show each image and label for show_time ms
 save_image = False
 save_dir = os.environ["HOME"] + "/tmp_data/conveni_data/for_drive/original_data/fcsc/with_annotation/"
 save_step = 1

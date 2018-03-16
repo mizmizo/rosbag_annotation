@@ -17,10 +17,35 @@ from cv_bridge import CvBridge
 ## === Annotation container data operator with clicked point data === ##
 
 class AnnotationOperator:
-    def __init__(self):
-        self.ref_pt = []
+    def __init__(self, data_type, data, keep_label = True):
+        # public : refered from GUI
         self.state = None
         self.label = ''
+        self.guide_msgs = {'addanno':'Choose class to add, then draw a rectangle.\
+                                      \nYou can choose class with a spinner on right-top or typing number (only 0-9)',
+                           'eraseanno':'Click a rectangle to erase.',
+                           'modanno':'Drag a vertex of a rectangle to reshape, inside to move, or select a class to change class.'}
+
+
+        # operation options
+        self.__data_type = data_type
+        self.__keep_label = None
+        self.set_keep(keep_label)
+
+        # input data
+        self.__image_msgs = None
+        self.__annotated_directory = None
+        self.__annotated_images = None
+        self.__annotated_labels = None
+        if self.__data_type == 0:
+            self.__image_msgs = data
+        else:
+            self.__annotated_directory = data[0]
+            self.__annotated_images = data[1]
+            self.__annotated_labels = data[2]
+
+        # operation data buffers
+        self.__ref_pt = []
         self.__click_id = None
         self.__click_label = ''
         self.__click_state = None
@@ -29,23 +54,32 @@ class AnnotationOperator:
         self.__color_list = []
         self.__addlabel = ''
         self.__dummylabel = '---'
-        self.guide_msgs = {'addanno':'Choose class to add, then draw a rectangle.\nYou can choose class with a spinner on right-top or typing number (only 0-9)',
-                           'eraseanno':'Click a rectangle to erase.',
-                           'modanno':'Drag a vertex of a rectangle to reshape, inside to move, or select a class to change class.'}
 
     def generate_colorlist(self, length):
         rand_list = [random.randint(0, 255) for i in xrange(length * 3)]
         for i in xrange(length):
             self.__color_list.append(rand_list[i * 3:(i + 1) * 3])
 
+    def pop_data(self, data):
+        if self.__data_type == 0:
+            topic, msg, t = self.__image_msgs.next()
+            data.load_image_from_msg(msg)
+        else:
+            image = self.__annotated_images.pop()
+            label = self.__annotated_labels.pop()
+            data.load_image_from_path(self.__annotated_directory + "/images/" + image,
+                                      self.__annotated_directory + "/labels/" + label)
+
     def draw_rect(self, data):
-        data.rected_image = data.image.copy()
+        data.rected_image = data.dot_image.copy()
         for idx, (name, rect) in enumerate(zip(data.class_vec, data.rect_vec)):
             if idx == self.__click_id:
                 cv2.rectangle(data.rected_image, rect[0], rect[1], [255, 255, 255], 4)
-            cv2.rectangle(data.rected_image, rect[0], rect[1], self.__color_list[int(data.id_reverse_dict[name])], 2)
+            cv2.rectangle(data.rected_image, rect[0], rect[1],
+                          self.__color_list[int(data.id_reverse_dict[name])], 2)
             text_pos = (rect[0][0], rect[0][1] - 5)
-            cv2.putText(data.rected_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[name])])
+            cv2.putText(data.rected_image, name, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0,
+                        self.__color_list[int(data.id_reverse_dict[name])])
         data.disp_image = data.rected_image.copy()
 
     def set_state(self, state):
@@ -55,6 +89,9 @@ class AnnotationOperator:
         elif self.state == "modanno" or self.state == "eraseanno":
                     self.label = self.__dummylabel
                     self.__click_id = None
+                    self.__click_label = ''
+                    self.__operating = False
+
 
     def set_label(self, val, data):
         if self.state == "addanno":
@@ -63,14 +100,30 @@ class AnnotationOperator:
         elif self.state == "modanno":
             self.label = val
             self.change_label(data)
-            ## todo : change label call
         elif self.state == "eraseanno":
             self.label = self.__dummylabel
+
+    def set_keep(self, flag):
+        if flag:
+            if self.__data_type == 0:
+                self.__keep_label = True
+            else:
+                self.__keep_label = False
+                print("[WARNING] : keep_label is disable when loading annotated data")
+        else:
+            self.__keep_label = False
 
     def change_label(self, data):
         if self.__click_id != None:
             data.class_vec[self.__click_id] = self.label
             self.draw_rect(data)
+
+    def finish_proc(self, val, data):
+        data.finish_imageproc(save = (val == "norun"),
+                              keep_label = self.__keep_label)
+        self.__click_id = None
+        self.__click_label = ''
+        self.__operating = False
 
 
     ## return  clicked rect_id and (0:left-top | 1:left-bottom | 2:right-bottom | 3:right-top | 4: center |  5:none)
@@ -124,13 +177,13 @@ class AnnotationOperator:
         ## Add annotation
         if self.state == "addanno":
             if event == EVENT_LBUTTONDOWN:
-                self.ref_pt = [(x, y)]
+                self.__ref_pt = [(x, y)]
                 self.__operating = True
                 return
             elif self.__operating and event == EVENT_LBUTTONUP:
-                self.ref_pt.append((x, y))
-                swap_pt = [(min(self.ref_pt[0][0], self.ref_pt[1][0]), min(self.ref_pt[0][1], self.ref_pt[1][1])),
-                           (max(self.ref_pt[0][0], self.ref_pt[1][0]), max(self.ref_pt[0][1], self.ref_pt[1][1]))]
+                self.__ref_pt.append((x, y))
+                swap_pt = [(min(self.__ref_pt[0][0], self.__ref_pt[1][0]), min(self.__ref_pt[0][1], self.__ref_pt[1][1])),
+                           (max(self.__ref_pt[0][0], self.__ref_pt[1][0]), max(self.__ref_pt[0][1], self.__ref_pt[1][1]))]
                 data.class_vec.append(selected_val)
                 data.rect_vec.append(swap_pt)
                 self.draw_rect(data)
@@ -138,12 +191,14 @@ class AnnotationOperator:
                 return
             elif self.__operating and event == EVENT_LBUTTONMOVE:
                 tmp_pt = (x,y)
-                swap_pt = [(min(self.ref_pt[0][0], tmp_pt[0]), min(self.ref_pt[0][1], tmp_pt[1])),
-                           (max(self.ref_pt[0][0], tmp_pt[0]), max(self.ref_pt[0][1], tmp_pt[1]))]
+                swap_pt = [(min(self.__ref_pt[0][0], tmp_pt[0]), min(self.__ref_pt[0][1], tmp_pt[1])),
+                           (max(self.__ref_pt[0][0], tmp_pt[0]), max(self.__ref_pt[0][1], tmp_pt[1]))]
                 data.disp_image = data.rected_image.copy()
-                cv2.rectangle(data.disp_image, swap_pt[0], swap_pt[1], self.__color_list[int(data.id_reverse_dict[selected_val])], 2)
+                cv2.rectangle(data.disp_image, swap_pt[0], swap_pt[1],
+                              self.__color_list[int(data.id_reverse_dict[selected_val])], 2)
                 text_pos = (swap_pt[0][0], swap_pt[0][1] - 5)
-                cv2.putText(data.disp_image, selected_val, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0, self.__color_list[int(data.id_reverse_dict[selected_val])])
+                cv2.putText(data.disp_image, selected_val, text_pos, cv2.FONT_HERSHEY_TRIPLEX, 1.0,
+                            self.__color_list[int(data.id_reverse_dict[selected_val])])
 
         ## Erase annotation
         elif self.state == "eraseanno":
@@ -152,6 +207,8 @@ class AnnotationOperator:
                 if self.__click_state != 5: #  selected
                     del data.class_vec[self.__click_id]
                     del data.rect_vec[self.__click_id]
+                    self.__click_id = None
+                    self.__click_label = ''
                 self.draw_rect(data)
                 return
 
@@ -210,7 +267,7 @@ class AnnotationOperator:
 
                 tmp_rects = data.rect_vec[:]
                 tmp_rects[self.__click_id] = tmp_rect
-                data.disp_image = data.image.copy()
+                data.disp_image = data.dot_image.copy()
                 for idx, (name, rect) in enumerate(zip(data.class_vec, tmp_rects)):
                     if idx == self.__click_id:
                         cv2.rectangle(data.disp_image, rect[0], rect[1], [255, 255, 255], 4)

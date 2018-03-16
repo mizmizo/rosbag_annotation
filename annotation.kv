@@ -14,7 +14,7 @@ AnnotationWidget:
 
 <AnnotationWidget>:
     ScreenManager:
-        id: sm
+        id: smanager
 
 ## ==== Setting ==== ##
 
@@ -33,31 +33,89 @@ AnnotationWidget:
                 padding: 30, 30, 30, 30
 
                 BoxLayout:
-                    size_hint_y: 0.1
-                    StrLabel:
-                        size_hint_x: 0.25
-                        text: 'Rosbag File'
-                    TextInput:
-                        size_hint_x: 0.75
-                        size_hint_y: None
-                        height: '32dp'
-                        id: bagfile_path
-                        multiline: False
-                        # text: "/media/hiroto/volume/conveni/bag/whole_items/"
-                        text: "/media/hiroto/volume/conveni/final_demo/bag/mizo/done/2018-02-08-17-44-14.bag"
+                    size_hint_y: 0.3
+                    Accordion:
+                        orientation: 'vertical'
+                        id: data_type
+
+                        AccordionItem:
+                            title: 'From Rosbag'
+                            id: from_rosbag
+                            collapse: False
+
+                            BoxLayout:
+                                orientation: 'vertical'
+
+                                BoxLayout:
+                                    size_hint_y: 0.15
+
+                                BoxLayout:
+                                    size_hint_y: 0.35
+                                    StrLabel:
+                                        size_hint_x: 0.25
+                                        text: 'Rosbag File'
+                                    TextInput:
+                                        size_hint_x: 0.75
+                                        size_hint_y: None
+                                        height: '32dp'
+                                        id: bagfile_path
+                                        multiline: False
+                                        # text: "/media/hiroto/volume/conveni/bag/whole_items/"
+                                        text: "/media/hiroto/volume/conveni/final_demo/bag/mizo/done/2018-02-08-17-44-14.bag"
+
+                                BoxLayout:
+                                    size_hint_y: 0.35
+                                    StrLabel:
+                                        size_hint_x: 0.25
+                                        text: 'Topic of Interest'
+                                    TextInput:
+                                        size_hint_x: 0.75
+                                        size_hint_y: None
+                                        height: '32dp'
+                                        id: topic_name
+                                        multiline: False
+                                        text: "/stereo/left/image_rect_color"
+
+                                BoxLayout:
+                                    size_hint_y: 0.15
+
+                        AccordionItem:
+                            title: 'From Annotated Data'
+                            id: from_annotated
+                            collapse: True
+
+                            BoxLayout:
+                                orientation: 'vertical'
+
+                                BoxLayout:
+                                    size_hint_y: 0.325
+
+                                BoxLayout:
+                                    size_hint_y: 0.35
+                                    StrLabel:
+                                        size_hint_x: 0.25
+                                        text: 'Data Directory'
+                                    TextInput:
+                                        size_hint_x: 0.75
+                                        size_hint_y: None
+                                        height: '32dp'
+                                        id: annotated_path
+                                        multiline: False
+                                        text: "/home/hiroto/data/anno_test/"
+
+                                BoxLayout:
+                                    size_hint_y: 0.325
 
                 BoxLayout:
-                    size_hint_y: 0.1
-                    StrLabel:
-                        size_hint_x: 0.25
-                        text: 'Topic of Interest'
-                    TextInput:
-                        size_hint_x: 0.75
-                        size_hint_y: None
-                        height: '32dp'
-                        id: topic_name
-                        multiline: False
-                        text: "/stereo/left/image_rect_color"
+                    size_hint_y: None
+                    height: '8dp'
+                    canvas.before:
+                        Color:
+                            rgba: 0.2, 0.2, 0.2, 1
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -116,7 +174,7 @@ AnnotationWidget:
                         text: "0"
 
                 BoxLayout:
-                    size_hint_y: 0.3
+                    size_hint_y: 0.2
                     StrLabel:
                         id: error_window
                         text: root.guide_msg
@@ -131,7 +189,7 @@ AnnotationWidget:
                         size_hint: None, None
                         size: '150dp', '48dp'
                         text: "Start"
-                        on_release: root.startAnnotation(sm, bagfile_path, topic_name, class_list, save_path, start_w_counter, start_r_counter)
+                        on_release: root.startAnnotation()
 
 ## ==== Annotation ==== ##
 

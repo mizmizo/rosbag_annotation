@@ -22,7 +22,7 @@ random.seed(5)
 
 class AnnotationContainer:
     def __init__(self, save_directory, init_counter, keep_label = True):
-        self.image = None ## image with dots
+        self.dot_image = None ## image with dots
         self.rected_image = None ## image with dots and rects
         self.disp_image = None ## image to display
         self.save_image = None ## original image
@@ -33,7 +33,6 @@ class AnnotationContainer:
         self.__bridge = CvBridge()
         self.r_counter = 0
         self.w_counter = init_counter
-        self.keep_label = keep_label
         # check directory
         self.__save_directory = save_directory
         for dname in ("/images/", "/labels/"):
@@ -57,20 +56,44 @@ class AnnotationContainer:
 
     def load_image_from_msg(self, msg, enc = "bgr8"):
         try:
-            self.image = self.__bridge.imgmsg_to_cv2(msg, enc)
+            self.dot_image = self.__bridge.imgmsg_to_cv2(msg, enc)
         except Exception as e:
             print (e)
 
         self.r_counter += 1
-        self.save_image = self.image.copy()
+        self.save_image = self.dot_image.copy()
         stride = 16
-        for j in xrange(0, self.image.shape[0], stride):
-            for i in xrange(0, self.image.shape[1], stride):
-                cv2.circle(self.image, (i, j), 2, (100, 100, 100), -1)
-        # self.rected_image = self.image.copy()
-        # self.disp_image = self.image.copy()
+        for j in xrange(0, self.dot_image.shape[0], stride):
+            for i in xrange(0, self.dot_image.shape[1], stride):
+                cv2.circle(self.dot_image, (i, j), 2, (100, 100, 100), -1)
 
-    def finish_imageproc(self, save = True):
+    def load_image_from_path(self, image_path, label_path):
+        try:
+            self.dot_image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        except Exception as e:
+            print (e)
+
+        try:
+            for line in open(label_path, 'r'):
+                line = line.rstrip("\n")
+                label = line.split()[0]
+                rect_str = line.split()[4:8]
+                rect = []
+                for i in xrange(len(rect_str)):
+                    rect.append(int(float(rect_str[i])))
+                self.rect_vec.append([(rect[0], rect[1]), (rect[2], rect[3])])
+                self.class_vec.append(label)
+        except Exception as e:
+            print (e)
+
+        self.r_counter += 1
+        self.save_image = self.dot_image.copy()
+        stride = 16
+        for j in xrange(0, self.dot_image.shape[0], stride):
+            for i in xrange(0, self.dot_image.shape[1], stride):
+                cv2.circle(self.dot_image, (i, j), 2, (100, 100, 100), -1)
+
+    def finish_imageproc(self, save = True, keep_label = True):
         if not len(self.class_vec) == 0 and save:
             ## write to file
             suffix_name = str(self.w_counter).zfill(6)
@@ -82,6 +105,6 @@ class AnnotationContainer:
             text_file.close()
             cv2.imwrite(self.__save_directory + '/images/' + suffix_name + '.jpg', self.save_image)
             self.w_counter += 1
-        if not self.keep_label:
+        if not keep_label:
             self.class_vec = []
             self.rect_vec = []
