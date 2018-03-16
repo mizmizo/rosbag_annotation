@@ -101,7 +101,8 @@ AnnotationWidget:
                                         height: '32dp'
                                         id: annotated_path
                                         multiline: False
-                                        text: "/home/hiroto/data/anno_test/"
+                                        text: "/home/mizmizo/tmp_data/wider_face/train_data/train/"
+                                        #text: "/home/hiroto/data/anno_test/"
 
                                 BoxLayout:
                                     size_hint_y: 0.325
@@ -129,7 +130,8 @@ AnnotationWidget:
                         id: class_list
                         multiline: False
                         # text: "whole_conveni_class_list.txt"
-                        text: "/media/hiroto/volume/conveni/final_demo/bag/class_list.txt"
+                        text: "/home/mizmizo/tmp_data/wider_face/train_data/face_class_list.txt"
+                        #text: "/media/hiroto/volume/conveni/final_demo/bag/class_list.txt"
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -143,7 +145,8 @@ AnnotationWidget:
                         id: save_path
                         multiline: False
                         # text: "/media/hiroto/volume/conveni/whole_item_train_data/"
-                        text: "/home/hiroto/data/anno_test/"
+                        text: "/home/mizmizo/tmp_data/wider_face/train_data_with_rot/train/"
+                        #text: "/home/hiroto/data/anno_test/"
 
                 BoxLayout:
                     size_hint_y: 0.1
@@ -204,21 +207,38 @@ AnnotationWidget:
                     size_hint_x: 0.82
 
                     # Image
-                    image_view: image_view.__self__
-                    TouchTracer:
-                        size_hint_y: None
-                        size_hint_x: None
-                        id: image_view
-                        texture: self.texture
-                        allow_stretch: True
-                        keep_ratio: True
-                        width: self.parent.width
-                        height: self.parent.width/self.image_ratio
+                    AnchorLayout:
+                        id: image_canvas
+                        anchor_x: 'center'
+                        anchor_y: 'center'
+                        canvas.before:
+                            Color:
+                                rgba: 0, 0, 0, 1
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
+
+                        # image_view: image_view.__self__
+                        TouchTracer:
+                            size_hint_y: None
+                            size_hint_x: None
+                            id: image_view
+                            texture: self.texture
+                            allow_stretch: True
+                            keep_ratio: True
+                            canvas_width: self.parent.width
+                            canvas_height: self.parent.height
+                            # width: self.parent.width
+                            # height: self.parent.height
+                            width: min(self.parent.width, self.parent.height * self.image_ratio)
+                            height: self.parent.height if self.parent.width >= self.parent.height * self.image_ratio else self.parent.width / self.image_ratio
+
+
 
                     # Status bar
                     BoxLayout:
                         orientation: 'horizontal'
-                        size_hint_y: 0.1
+                        size_hint_y: 0.18
 
                         # counter
                         GridLayout:

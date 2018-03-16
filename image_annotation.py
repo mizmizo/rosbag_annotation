@@ -212,10 +212,8 @@ class AnnotationWidget(Screen, Label, Image):
                 self.screenupdate()
         elif text == 's':
             self.runCommand('norun')
-            print("save")
         elif text == 'n':
             self.runCommand('skip')
-            print("skip")
 
 class TouchTracer(Label, Image):
     def __init__(self, **kwargs):
@@ -224,13 +222,23 @@ class TouchTracer(Label, Image):
         self.image = cv2.imread("images/dummy.jpg")
         self.touch_pos = []
         self.touch_event = None
+        self.canvas_width = 1.0
+        self.canvas_height = 1.0
 
     def setImage(self, img):
             self.image = img
 
     def update(self, dt):
-        image_buf = cv2.flip(self.image, 0)
-        image_texture = Texture.create(size=(self.image.shape[1], self.image.shape[0]), colorfmt='bgr')
+        if self.canvas_width < self.image.shape[1] or self.canvas_height < self.image.shape[0]:
+            # for avoiding to show incorrect image
+            resize_ratio = min(self.canvas_width / self.image.shape[1], self.canvas_height / self.image.shape[0])
+            flip_image = cv2.flip(self.image, 0)
+            image_buf = cv2.resize(flip_image, (int(flip_image.shape[1] * resize_ratio),
+                                                int(flip_image.shape[0] * resize_ratio)))
+        else:
+            image_buf = cv2.flip(self.image, 0)
+        image_texture = Texture.create(size=(image_buf.shape[1], image_buf.shape[0]), colorfmt='bgr')
+        self.canvas_ratio = self.canvas_width / self.canvas_height
         image_texture.blit_buffer(image_buf.tostring(), colorfmt='bgr', bufferfmt='ubyte')
         self.texture = image_texture
 
